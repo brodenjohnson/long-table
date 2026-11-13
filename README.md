@@ -12,7 +12,7 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
-Or play the build on GitHub Pages, if it is turned on for the repo. `.github/workflows/playtest.yml` builds and publishes it, and explains the one-time setup.
+Or play the latest build at https://brodenjohnson.github.io/long-table/. `.github/workflows/playtest.yml` rebuilds it on every push to main.
 
 Saves live in the browser, so a save made on localhost will not show up on the Pages link, and the reverse.
 

@@ -1,8 +1,8 @@
 # Builds the game and publishes it to GitHub Pages as a playable link.
 #
-# One-time setup: Settings > Pages > Build and deployment > Source: GitHub Actions.
-# Public repo: runs on every push to main.
-# Private repo: Pages needs a paid GitHub plan. Run it by hand from the Actions tab.
+# Runs on every push to main, or by hand from the Actions tab.
+# Needs Settings > Pages > Build and deployment > Source: GitHub Actions.
+# The repo is private, so Pages relies on a paid GitHub plan. The site itself is public but unlisted.
 
 name: Playtest build
 
@@ -22,7 +22,6 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || !github.event.repository.private
     runs-on: ubuntu-latest
     defaults:
       run:
