@@ -46,5 +46,9 @@
   "corn_cakes": {"name": "Corn Cakes", "kind": "food", "sell": 105, "stamina": 48, "health": 6, "desc": "Fried flat on a hot stone."},
   "tomato_soup": {"name": "Tomato Soup", "kind": "food", "sell": 90, "stamina": 40, "health": 14, "desc": "Thin, sharp and hot."},
   "field_stew": {"name": "Field Stew", "kind": "food", "sell": 130, "stamina": 75, "health": 18, "desc": "Whatever came out of the ground today, in one pot."},
-  "pumpkin_mash": {"name": "Pumpkin Mash", "kind": "food", "sell": 260, "stamina": 95, "health": 22, "desc": "Sweet enough to feel like a holiday."}
+  "pumpkin_mash": {"name": "Pumpkin Mash", "kind": "food", "sell": 260, "stamina": 95, "health": 22, "desc": "Sweet enough to feel like a holiday."},
+  "hen": {"name": "Hen", "kind": "animal", "price": 110, "sell": 40, "desc": "Scrawny, loud, and worth it. Let her out near a coop. She forages by day and lays if she has eaten."},
+  "egg": {"name": "Egg", "kind": "food", "sell": 28, "stamina": 12, "health": 2, "desc": "Small and brown. Still warm."},
+  "coop": {"name": "Coop", "kind": "place", "place": "coop", "sell": 30, "desc": "Holds four hens. They shut themselves in at dusk."},
+  "egg_hash": {"name": "Egg Hash", "kind": "food", "sell": 120, "stamina": 60, "health": 12, "desc": "Eggs and potato fried hard."}
 }

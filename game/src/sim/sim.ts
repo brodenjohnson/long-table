@@ -12,6 +12,7 @@ import { NightSystem } from './night';
 import { HandSystem } from './hands';
 import { TraderSystem } from './trader';
 import { RaiderSystem } from './raiders';
+import { AnimalSystem } from './animals';
 import { endDay } from './day';
 
 export interface InputFrame {
@@ -105,6 +106,7 @@ export class Sim {
   readonly hands: HandSystem;
   readonly trader: TraderSystem;
   readonly raiders: RaiderSystem;
+  readonly animals: AnimalSystem;
   /** Simulation time, seconds. */
   time = 0;
   /** Set when the day should end at the next step. */
@@ -127,6 +129,7 @@ export class Sim {
     this.hands = new HandSystem(this);
     this.trader = new TraderSystem(this);
     this.raiders = new RaiderSystem(this);
+    this.animals = new AnimalSystem(this);
   }
 
   emit(e: SimEvent): void {
@@ -181,6 +184,7 @@ export class Sim {
     this.hands.update();
     this.trader.update();
     this.raiders.update();
+    this.animals.update();
     this.updateTarget(input);
     // Write back to the saved player state
     const ps = this.state.player;
@@ -488,6 +492,11 @@ export class Sim {
         this.cooldown = 0.2;
         return;
       case 'ammo':
+        return;
+      case 'animal':
+        if (!input.usePressed) return;
+        if (!this.world.walkable(tile.x, tile.y, true)) return;
+        if (this.animals.release(tile.x + 0.5, tile.y + 0.5)) removeFromSlot(this.state.inv, this.state.sel, 1);
         return;
     }
     void p;
@@ -963,6 +972,9 @@ export class Sim {
       case 'compost':
         this.useCompostBin(t.obj!);
         break;
+      case 'coop':
+        this.animals.useCoop(t.obj!.id);
+        break;
       case 'read': {
         const doc = String(t.obj!.s?.doc ?? '');
         this.world.remove(t.obj!);
@@ -1121,7 +1133,7 @@ export class Sim {
     }
     const o = this.world.objectAt(tile.x, tile.y);
     if (o && OBJECTS[o.kind].interact && !this.hint) {
-      const map: Record<string, string> = { sleep: 'Sleep', water: 'Fill can', depot: 'Open crate', radio: 'Listen', compost: 'Compost', read: 'Read' };
+      const map: Record<string, string> = { sleep: 'Sleep', water: 'Fill can', depot: 'Open crate', radio: 'Listen', compost: 'Compost', read: 'Read', coop: 'Coop' };
       this.hint = map[OBJECTS[o.kind].interact!] ?? '';
     }
     switch (def.kind) {
@@ -1141,6 +1153,9 @@ export class Sim {
         break;
       case 'material':
         if (s.id === 'compost') this.target = { ...tile, ok: !!this.world.tilled[k], kind: 'tool' };
+        break;
+      case 'animal':
+        this.target = { ...tile, ok: this.world.walkable(tile.x, tile.y, true), kind: 'place' };
         break;
     }
   }

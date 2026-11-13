@@ -376,3 +376,32 @@ test('an old version 1 save still loads', async ({ page }) => {
   });
   expect(r.crew).toBe(true);
 });
+
+test('hens forage, lay and can be collected from the coop', async ({ page }) => {
+  await boot(page, 'peaceful');
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    const w = s.world;
+    const coop = w.add('coop', 36, 50);
+    const ok1 = s.animals.release(36.5, 51.5);
+    const ok2 = s.animals.release(36.5, 51.6);
+    s.state.minute = 10 * 60;
+    g.advance(5);
+    const moved = s.state.hens.some((h: any) => Math.hypot(h.x - 36.5, h.y - 51.5) > 0.2);
+    let eggs = 0;
+    for (let d = 0; d < 3; d++) {
+      s.requestSleep();
+      g.advance(0.05);
+      g.closeUi();
+      eggs = Number(w.objects.get(coop.id).s?.eggs ?? 0);
+    }
+    s.animals.useCoop(coop.id);
+    return { ok1, ok2, hens: s.state.hens.length, moved, eggs, dropped: s.pickups.filter((p: any) => p.item.id === 'egg').length };
+  });
+  expect(r.ok1 && r.ok2).toBe(true);
+  expect(r.hens).toBe(2);
+  expect(r.moved).toBe(true);
+  expect(r.eggs).toBeGreaterThan(0);
+  expect(r.dropped).toBe(1);
+});

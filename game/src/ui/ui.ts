@@ -617,6 +617,7 @@ export class UI {
         const def = ITEMS[s.id];
         detail.append(h('div', null, h('b', null, this.itemLabel(s)), s.n > 1 ? h('span', { class: 'faint' }, `  x${s.n}`) : null));
         if (def.desc) detail.append(h('div', { class: 'dim' }, def.desc));
+        if (def.kind === 'animal') detail.append(h('div', { class: 'dim' }, 'Hold her on your hotbar and click open ground near a coop to let her out.'));
         if (def.kind === 'seed') {
           const c = CROPS[def.crop!];
           detail.append(h('div', { class: 'dim' }, `Grows in ${c.seasons.join(' and ')}. ${c.days} days to ripen${c.regrow ? `, then again every ${c.regrow} days` : ''}. Sells for about ${c.sell}.`));

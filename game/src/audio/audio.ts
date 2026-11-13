@@ -298,6 +298,9 @@ export class Audio {
       case 'day_end':
         for (const [i, f] of [[0, 392], [1, 494], [2, 587]] as [number, number][]) this.pluck(t + i * 0.09, f, 0.25, out);
         break;
+      case 'hen':
+        for (let i = 0; i < 3; i++) this.tone(t + i * 0.09, 'square', 720 - i * 60, 520 - i * 40, 0.06, 0.05, out);
+        break;
       case 'ui_open':
         this.tone(t, 'triangle', 440, 520, 0.06, 0.08, out);
         break;

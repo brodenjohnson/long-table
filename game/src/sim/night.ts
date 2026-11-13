@@ -40,6 +40,8 @@ export class NightSystem {
   private nextId = 1;
   private wavesDone = new Set<number>();
   private lastDay = -1;
+  /** How many Husks reached the farm last time the night was resolved off-screen. */
+  lastReached = 0;
   /** A loud noise somewhere: Husks within range turn toward it. */
   noise: { x: number; y: number; t: number } | null = null;
 
@@ -100,6 +102,7 @@ export class NightSystem {
     const st = s.state;
     const w = s.world;
     const lines: string[] = [];
+    this.lastReached = 0;
     if (st.flags.difficulty === 'peaceful') {
       this.husks = [];
       return lines;
@@ -145,6 +148,7 @@ export class NightSystem {
     }
     // Lamps away from the field draw some of them off
     reached = Math.round(reached * Math.max(0.35, 1 - lampsOut * 0.15));
+    this.lastReached = reached;
     const live = [...w.crops.entries()].filter(([, c]) => !c.dead).map(([k]) => k);
     // A small patch is easy to miss in the dark; the first nights are kinder
     const findChance = Math.min(1, 0.25 + live.length / 30) * (st.day <= 2 ? 0.5 : 1);

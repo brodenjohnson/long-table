@@ -43,6 +43,19 @@ export interface HandState {
   carrying: Stack[];
 }
 
+export interface HenState {
+  id: number;
+  name: string;
+  x: number;
+  y: number;
+  dir: number;
+  coop: number;
+  /** Ate enough yesterday to lay this morning. */
+  fed: boolean;
+  /** 0..100. Rises with food and safety. */
+  mood: number;
+}
+
 export interface TraderState {
   /** Demand multiplier per item id, 0.5..1.2. Selling a lot of one thing drives it down. */
   demand: Record<string, number>;
@@ -64,6 +77,8 @@ export interface GameState {
   depot: Stack[];
   trader: TraderState;
   hands: HandState[];
+  hens: HenState[];
+  nextHen: number;
   /** A drifter waiting at the gate to be hired, and the day they turned up. */
   applicant: { id: string; day: number } | null;
   /** Hands who have left or been let go do not come back. */
@@ -77,7 +92,7 @@ export interface GameState {
   journal: { day: number; text: string }[];
 }
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 export const INV_SIZE = 30;
 export const HOTBAR = 10;
 
@@ -132,6 +147,8 @@ export function newGameState(seed: number, name: string, startX: number, startY:
     depot: [],
     trader: { demand: {}, lastPaid: 0 },
     hands: [],
+    hens: [],
+    nextHen: 1,
     applicant: null,
     goneHands: [],
     flags: {},

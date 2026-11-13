@@ -27,7 +27,7 @@ Codename **Long Table**. A dark, adult farming and settlement game with combat, 
 - Everything content-like is data (JSON, validated on load). Code reads data.
 - Expose `window.__game` so Playwright can drive and inspect the game. A test for every feature. Keep a regression list and run it before every release.
 - Saves use a versioned schema with explicit migrations. Never break an old save of this game without saying so first. Never rename an item or change saved data without a migration.
-- Keep the art pipeline apart from game code. The game reads only PNG sheets and JSON atlases.
+- Keep art code in `game/src/art/` apart from game logic. Art is painted at startup into atlas pages; the renderer only takes textures from the atlas, so painted-over art can replace it later without touching the sim.
 - Controller support and 1280 by 800 readability are requirements from the first build, not polish.
 - Release flow: `VERSION`, `CHANGELOG.md`, a release script, playtest hosting, an in-game notice when a newer build is out.
 

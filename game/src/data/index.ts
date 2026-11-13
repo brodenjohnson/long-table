@@ -24,7 +24,7 @@ export interface CropDef {
   cleans?: number;
 }
 
-export type ItemKind = 'tool' | 'weapon' | 'seed' | 'produce' | 'material' | 'food' | 'medicine' | 'ammo' | 'place';
+export type ItemKind = 'tool' | 'weapon' | 'seed' | 'produce' | 'material' | 'food' | 'medicine' | 'ammo' | 'place' | 'animal';
 
 export interface ItemDef {
   id: string;
@@ -56,7 +56,7 @@ export interface ObjectDef {
   h: number;
   tool?: 'axe' | 'pick' | 'any';
   drops?: [string, number, number][];
-  interact?: 'sleep' | 'water' | 'depot' | 'radio' | 'compost' | 'read';
+  interact?: 'sleep' | 'water' | 'depot' | 'radio' | 'compost' | 'read' | 'coop';
   placed?: boolean;
   light?: number;
   husksBreak?: boolean;

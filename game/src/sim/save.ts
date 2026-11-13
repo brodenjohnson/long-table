@@ -26,6 +26,11 @@ const MIGRATIONS: ((s: SaveFile) => void)[] = [
   // 1 -> 2: the Sallow Crew
   s => {
     (s.state as GameState).crew = { envoyDay: 0, demand: 0, paidUntil: 0, raidDay: 0, angry: 0, won: 0, lost: 0 };
+  },
+  // 2 -> 3: hens
+  s => {
+    (s.state as GameState).hens = [];
+    (s.state as GameState).nextHen = 1;
   }
 ];
 

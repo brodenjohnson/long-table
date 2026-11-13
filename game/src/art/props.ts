@@ -564,6 +564,70 @@ function papers(): { cv: Cv; ax: number; ay: number } {
   return { cv, ax: 8, ay: 6 };
 }
 
+function coop(): { cv: Cv; ax: number; ay: number } {
+  const iso = new Iso3(1, 1, 30);
+  const wood = '#7a5e44';
+  // Raised hutch on legs with a ramp
+  for (const [x, y] of [[0.12, 0.12], [0.8, 0.12], [0.12, 0.8], [0.8, 0.8]]) iso.box(x, y, 0, 0.08, 0.08, 6, faces('#5a4632', 0.1, -0.3));
+  iso.box(0.08, 0.08, 6, 0.86, 0.86, 10, faces(wood, 0.14, -0.3));
+  iso.leftLines(0.08, 0.94, 6, 0.86, 10, 2.5, shade(wood, -0.18));
+  iso.rightLines(0.94, 0.08, 6, 0.86, 10, 2.5, shade(wood, -0.45));
+  iso.quad([[0.35, 0.95, 7], [0.6, 0.95, 7], [0.6, 0.95, 12], [0.35, 0.95, 12]], '#1e1610');
+  iso.gableX(0.08, 0.08, 16, 0.86, 0.86, 7, '#6a4030', shade(wood, -0.1), 0.08);
+  // Ramp
+  iso.quad([[0.38, 0.95, 7], [0.58, 0.95, 7], [0.58, 1.3, 0], [0.38, 1.3, 0]], '#8a6a4a');
+  finish(iso.cv);
+  const [ax, ay] = iso.anchor(0.5, 0.5);
+  return { cv: iso.cv, ax, ay };
+}
+
+/** A hen. dir 0..7 clockwise from east; anim walk/peck/idle. */
+function hen(dir: number, anim: 'idle' | 'walk' | 'peck', f: number): Cv {
+  const cv = makeCanvas(18, 16);
+  const ctx = cv.ctx;
+  const a = (dir * Math.PI) / 4;
+  const fx = Math.cos(a);
+  const fy = Math.sin(a);
+  const cx = 9;
+  const cy = 10;
+  const body = '#c8a878';
+  const dark = '#8a6a48';
+  // Legs
+  const step = anim === 'walk' ? (f % 2 ? 1 : -1) : 0;
+  ctx.fillStyle = '#d89a30';
+  ctx.fillRect(Math.round(cx - 1 + step * 0.5), cy + 2, 1, 3);
+  ctx.fillRect(Math.round(cx + 1 - step * 0.5), cy + 2, 1, 3);
+  // Tail behind
+  const tx = cx - fx * 4;
+  const ty = cy - fy * 2 - 3;
+  const drawTail = () => ellipse(ctx, tx, ty, 2, 2.6, dark);
+  // Head in front
+  const peck = anim === 'peck' && f % 2 === 0;
+  const hx = cx + fx * 4;
+  const hy = cy + fy * 2 - (peck ? 0 : 5);
+  const drawHead = () => {
+    ellipse(ctx, hx, hy, 2.2, 2.2, body);
+    ctx.fillStyle = '#c83a2a';
+    ctx.fillRect(Math.round(hx - 1), Math.round(hy - 3), 2, 2);
+    ctx.fillStyle = '#e0a030';
+    ctx.fillRect(Math.round(hx + fx * 2), Math.round(hy + fy * 1), 2, 1);
+    if (fy > -0.5) {
+      ctx.fillStyle = '#1a1410';
+      ctx.fillRect(Math.round(hx + fx * 0.8), Math.round(hy - 0.5), 1, 1);
+    }
+  };
+  if (fy > 0) drawTail();
+  else drawHead();
+  ellipse(ctx, cx, cy, 4.2, 3.2, body);
+  ellipse(ctx, cx - fy * 1.2, cy - 0.5, 2.4, 1.6, shade(body, 0.15));
+  px(ctx, cx + 1, cy + 1, dark, 2, 1);
+  if (fy > 0) drawHead();
+  else drawTail();
+  crisp(cv);
+  outline(cv);
+  return cv;
+}
+
 function shadowTex(rx: number, ry: number): Cv {
   const cv = makeCanvas(rx * 2 + 2, ry * 2 + 2);
   ellipse(cv.ctx, rx + 1, ry + 1, rx, ry, '#000000');
@@ -617,6 +681,14 @@ export function paintProps(atlas: Atlas): void {
   add('obj:spike_trap:0', spikeTrap());
   add('obj:sprinkler:0', sprinkler());
   add('obj:document:0', papers());
+  add('obj:coop:0', coop());
+  for (let d = 0; d < 8; d++) {
+    for (let f = 0; f < 2; f++) {
+      atlas.add(`hen:walk:${d}:${f}`, hen(d, 'walk', f), 9, 15);
+      atlas.add(`hen:peck:${d}:${f}`, hen(d, 'peck', f), 9, 15);
+    }
+    atlas.add(`hen:idle:${d}:0`, hen(d, 'idle', 0), 9, 15);
+  }
   for (const [n, rx, ry] of [['s', 5, 2], ['m', 8, 4], ['l', 13, 6], ['xl', 40, 20]] as [string, number, number][]) {
     const c = shadowTex(rx, ry);
     atlas.add(`shadow:${n}`, c, c.w / 2, c.h / 2);

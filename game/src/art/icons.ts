@@ -208,6 +208,25 @@ function misc(id: string): Cv {
       if (id === 'field_stew') { px(c, 5, 8, '#5a7a30', 1, 1); px(c, 10, 8, '#c8465a', 1, 1); }
       break;
     }
+    case 'egg':
+      ellipse(c, 8, 9, 4, 5, '#d8b890');
+      px(c, 6, 6, '#f0e0c8', 2, 2);
+      break;
+    case 'egg_hash':
+      poly(c, [2, 9, 14, 9, 12, 14, 4, 14], '#5a4a3a');
+      ellipse(c, 8, 9, 6, 2, '#c8a050');
+      ellipse(c, 7, 8, 2, 1, '#f0e8d0');
+      px(c, 7, 8, '#e8a020', 1, 1);
+      break;
+    case 'hen':
+      ellipse(c, 8, 10, 5, 4, '#c8a878');
+      ellipse(c, 12, 6, 2.4, 2.4, '#c8a878');
+      px(c, 11, 3, '#c83a2a', 2, 2);
+      px(c, 14, 6, '#e0a030', 2, 1);
+      ellipse(c, 3.5, 8, 2, 3, '#8a6a48');
+      px(c, 7, 14, '#d89a30', 1, 2);
+      px(c, 9, 14, '#d89a30', 1, 2);
+      break;
     case 'rounds':
       for (let i = 0; i < 3; i++) {
         poly(c, [3 + i * 4, 6, 6 + i * 4, 6, 6 + i * 4, 14, 3 + i * 4, 14], '#c8a050');
@@ -258,6 +277,11 @@ function placeable(id: string): Cv {
     case 'spike_trap':
       poly(c, [2, 11, 14, 11, 14, 14, 2, 14], '#4a3a2c');
       for (let x = 3; x < 14; x += 2.5) line(c, x, 11, x, 5, 1, '#c8ccd0');
+      break;
+    case 'coop':
+      poly(c, [3, 7, 13, 7, 13, 13, 3, 13], '#7a5e44');
+      poly(c, [2, 7, 8, 2, 14, 7], '#6a4030');
+      poly(c, [7, 9, 9, 9, 9, 13, 7, 13], '#1e1610');
       break;
     case 'sprinkler':
       line(c, 8, 7, 8, 14, 2, '#6f7376');

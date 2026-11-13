@@ -106,8 +106,9 @@ export function endDay(sim: Sim, passedOut: boolean): void {
     }
   }
 
-  // ---- Hands
+  // ---- Hands and hens
   report.push(...sim.hands.endDay());
+  report.push(...sim.animals.endDay(sim.night.lastReached));
 
   // ---- Next day
   const oldSeason = seasonOf(st.day);

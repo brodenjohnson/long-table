@@ -7,10 +7,12 @@
   {"out": "spike_trap", "n": 2, "in": {"scrap": 3, "wood": 1}},
   {"out": "bunk", "n": 1, "in": {"wood": 8, "cloth": 2}},
   {"out": "sprinkler", "n": 1, "in": {"scrap": 6, "stone": 3}},
+  {"out": "coop", "n": 1, "in": {"wood": 10, "scrap": 2}},
   {"out": "bandage", "n": 1, "in": {"cloth": 1, "fibre": 2}},
   {"out": "roast_potato", "n": 1, "in": {"potato": 1}, "at": "fire"},
   {"out": "corn_cakes", "n": 1, "in": {"corn": 2}, "at": "fire"},
   {"out": "tomato_soup", "n": 1, "in": {"tomato": 2}, "at": "fire"},
   {"out": "field_stew", "n": 1, "in": {"potato": 1, "kale": 1, "radish": 1}, "at": "fire"},
-  {"out": "pumpkin_mash", "n": 1, "in": {"pumpkin": 1}, "at": "fire"}
+  {"out": "pumpkin_mash", "n": 1, "in": {"pumpkin": 1}, "at": "fire"},
+  {"out": "egg_hash", "n": 1, "in": {"egg": 2, "potato": 1}, "at": "fire"}
 ]

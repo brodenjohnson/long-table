@@ -507,6 +507,25 @@ export class Renderer {
       this.placeChar(id, 'hand_' + sim.state.applicant.id, ap.x, ap.y, 6, 'idle', this.time, 'none');
     }
 
+    if (!sim.animals.indoors())
+      for (const hn of sim.state.hens) {
+        const id = 'hen' + hn.id;
+        seen.add(id);
+        const c = this.charSprite(id);
+        const v = sim.animals.view(hn);
+        const f = v.anim === 'walk' ? Math.floor(v.animT * 8) % 2 : v.anim === 'peck' ? Math.floor(v.animT * 5) % 2 : 0;
+        setTex(c.body, this.atlas.get(`hen:${v.anim}:${hn.dir}:${f}`));
+        const p = toScreen(hn.x, hn.y);
+        c.body.position.set(Math.round(p.x), Math.round(p.y));
+        c.body.zIndex = (hn.x + hn.y) * 10 + 0.1;
+        c.body.tint = hn.id % 3 === 0 ? 0x9a8070 : hn.id % 3 === 1 ? 0xffffff : 0xe0d0c0;
+        c.body.alpha = 1;
+        c.body.visible = true;
+        c.shadow.position.set(Math.round(p.x + 1), Math.round(p.y));
+        c.shadow.visible = true;
+        c.shadow.alpha = 0.7;
+      }
+
     const tr = sim.trader.npcPos();
     if (tr) {
       seen.add('trader');
@@ -535,6 +554,9 @@ export class Renderer {
     const bob = t.state === 'parked' ? 0 : Math.round(Math.sin(t.bounce * 22) * 0.6);
     this.truck.position.set(Math.round(p.x), Math.round(p.y) + bob);
     this.truck.zIndex = (t.x + t.y + 0.6) * 10;
+    if (t.state === 'in' || t.state === 'out') {
+      if (Math.random() < 0.5) this.fx.burst('dust', t.x + (t.dir === 0 ? -1.1 : 1.1), t.y + (Math.random() - 0.5) * 0.6, 2, 1);
+    }
     this.truckShadow.visible = true;
     this.truckShadow.anchor.set(0.5);
     this.truckShadow.position.set(Math.round(p.x + 4), Math.round(p.y + 2));
@@ -710,6 +732,11 @@ export class Renderer {
     light(sim.player.x, sim.player.y, 8, 2.2, 0x8090b0, 0.55);
     const t = sim.trader.truck;
     if (t.state !== 'away') light(t.x + (t.dir === 0 ? 1.6 : -1.6), t.y, 6, 4, 0xfff0c0, 0.9);
+    // Guards on watch carry a lantern
+    for (const g of sim.hands.activeGuards()) {
+      const m = sim.state.minute % (24 * 60);
+      if (m >= 20 * 60 || m < 5.5 * 60) light(g.x, g.y, 10, 4, 0xffd890, 0.9);
+    }
     for (const fxl of this.flashes) light(fxl.x, fxl.y, 12, 7, 0xffe0a0, fxl.t * 8);
     for (let i = li; i < this.lights.length; i++) this.lights[i].visible = false;
     const ambColour = (Math.round(amb[0] * 255) << 16) | (Math.round(amb[1] * 255) << 8) | Math.round(Math.min(1, amb[2]) * 255);
