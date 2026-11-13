@@ -122,7 +122,8 @@ export class UI {
     this.toasts = h('div', { class: 'toasts' });
     this.objective = h('div', { class: 'panel objective' });
     this.floatsEl = h('div', { class: 'floats' });
-    this.hud.append(h('div', { class: 'vignette' }), h('div', { class: 'hurtflash' }), this.floatsEl, this.vitals, this.objective, this.clockEl, this.toasts, this.hintEl, this.itemName, this.hotbar);
+    const left = h('div', { class: 'lefttop' }, this.vitals, this.objective, this.toasts);
+    this.hud.append(h('div', { class: 'vignette' }), h('div', { class: 'hurtflash' }), this.floatsEl, left, this.clockEl, this.hintEl, this.itemName, this.hotbar);
     for (let i = 0; i < HOTBAR; i++) {
       const s = h('div', { class: 'slot', 'data-i': i });
       s.addEventListener('mousedown', e => {
