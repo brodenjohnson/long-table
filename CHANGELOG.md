@@ -14,5 +14,5 @@ The first playable build of the new game.
 - Hens: buy them from the truck, keep them in a coop. They forage by day, lay if they ate, and are at risk if Husks reach an open farm.
 - Fourteen achievements, kept ready to forward to Steam.
 - Peaceful, Normal and Hard. Gore can be turned down or off. Rebindable keys, controller support, text size, zoom, screen shake.
-- Saves: three slots, autosave every morning and every 90 seconds, export and import. Version 2 save format with migrations.
+- Saves: three slots, autosave every morning and every 90 seconds, export and import. Version 3 save format with migrations from every earlier version.
 - Sound: effects, wind, rain, creek, fire and crickets, and a generative plucked-string score, all synthesised.
