@@ -835,6 +835,7 @@ export class Sim {
     this.sfx('harvest', x, y);
     this.emit({ t: 'fx', kind: 'leaf', x: x + 0.5, y: y + 0.5, z: 6, n: 8 });
     const qn = ['', ' (Good)', ' (Prime)'][s.q ?? 0];
+    if (s.q === 2) this.state.flags.primeHarvest = 1;
     this.emit({ t: 'float', text: `+${s.n} ${ITEMS[s.id].name}${qn}${s.t ? ' (tainted)' : ''}`, x: x + 0.5, y: y + 0.5, colour: s.t ? '#b8b860' : s.q === 2 ? '#f0d070' : '#e8e0c8' });
     if (!this.state.flags.firstHarvest) {
       this.state.flags.firstHarvest = 1;

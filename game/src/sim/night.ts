@@ -170,7 +170,10 @@ export class NightSystem {
     if (trapped) lines.push(`Your spike traps caught ${trapped} ${trapped === 1 ? 'Husk' : 'Husks'} in the night.`);
     lines.push(...guardLines.lines);
     if (broken) lines.push(`${broken} ${broken === 1 ? 'fence section was' : 'fence sections were'} battered down.`);
-    if (enclosed && !broken && reached === 0 && pending > 0) lines.push('Husks came to the fence in the night. It held.');
+    if (enclosed && !broken && reached === 0 && pending > 0) {
+      lines.push('Husks came to the fence in the night. It held.');
+      st.flags.fenceHeld = 1;
+    }
     return lines;
   }
 

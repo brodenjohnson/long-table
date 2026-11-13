@@ -1,0 +1,16 @@
+[
+  { "id": "first_furrow", "name": "First Furrow", "desc": "Turn soil for the first time." },
+  { "id": "first_harvest", "name": "Something Grew", "desc": "Bring in a first harvest." },
+  { "id": "first_sale", "name": "On the Books", "desc": "Sell something to the Hull." },
+  { "id": "prime", "name": "Prime Cut", "desc": "Harvest Prime produce." },
+  { "id": "hired", "name": "Another Pair of Hands", "desc": "Hire a hand." },
+  { "id": "fence_held", "name": "It Held", "desc": "Husks came to the fence in the night, and it held." },
+  { "id": "clean_ground", "name": "Clean Ground", "desc": "Clean the poisoned corner of the field." },
+  { "id": "husks_10", "name": "Put Them Down", "desc": "Put down ten Husks." },
+  { "id": "crew_won", "name": "Not on Our Road", "desc": "See off a Sallow Crew raid." },
+  { "id": "tithe", "name": "Cost of Doing Business", "desc": "Pay the Sallow Crew." },
+  { "id": "full_coop", "name": "Full Coop", "desc": "Keep four hens." },
+  { "id": "season", "name": "One Season", "desc": "Reach the Green season." },
+  { "id": "papers", "name": "In Your Own Hand", "desc": "Find every paper in the valley." },
+  { "id": "scrip_2000", "name": "Long Table", "desc": "Earn 2,000 scrip." }
+]

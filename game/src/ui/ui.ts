@@ -2,7 +2,8 @@
 import './ui.css';
 import { h, clear } from './dom';
 import { iconURL } from '../art/icons';
-import { CREW, CROPS, DOCUMENTS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
+import { ACHIEVEMENTS, CREW, CROPS, DOCUMENTS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
+import { unlockedAchievements } from '../sim/achievements';
 import { MAP_H, MAP_W } from '../core/config';
 import { T } from '../sim/world';
 import { PLACES } from '../sim/worldgen';
@@ -355,6 +356,7 @@ export class UI {
       h('button', { class: latest ? '' : 'primary', onclick: () => this.showNewGame() }, 'New game'),
       slots.length ? h('button', { onclick: () => this.showLoad() }, 'Load') : null,
       h('button', { onclick: () => this.showSettings(() => this.showTitle()) }, 'Settings'),
+      h('button', { onclick: () => this.showAchievements() }, 'Achievements'),
       h('button', { onclick: () => this.showCredits() }, 'About')
     );
     const panel = h('div', { class: 'col', style: { alignItems: 'center' } },
@@ -364,6 +366,18 @@ export class UI {
     );
     const scr = h('div', { class: 'title', style: { display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' } }, panel, h('div', { class: 'ver' }, `Playtest build ${VERSION}`));
     this.show('title', scr, { sound: false });
+  }
+
+  private showAchievements(): void {
+    const got = unlockedAchievements();
+    const panel = h('div', { class: 'panel modal', style: { width: 'calc(var(--u) * 32)' } },
+      h('div', { class: 'row spread' }, h('h2', null, 'Achievements'), h('span', { class: 'faint' }, `${got.size} of ${ACHIEVEMENTS.length}`)),
+      h('div', { class: 'list' }, ACHIEVEMENTS.map(a => h('div', { class: `line${got.has(a.id) ? '' : ' off'}`, style: { gridTemplateColumns: '1fr auto' } },
+        h('div', null, h('div', { class: got.has(a.id) ? 'good' : '' }, a.name), h('div', { class: 'faint', style: { fontSize: '0.85em' } }, a.desc)),
+        h('span', { class: got.has(a.id) ? 'good' : 'faint' }, got.has(a.id) ? 'Done' : '')))),
+      h('button', { class: 'primary', style: { marginTop: 'calc(var(--u) * 0.6)' }, onclick: () => this.showTitle() }, 'Back')
+    );
+    this.show('credits', panel);
   }
 
   private showCredits(): void {
@@ -511,6 +525,7 @@ export class UI {
         cycle('Screen shake', () => (s.shake ? 'On' : 'Off'), () => (s.shake = !s.shake)),
         cycle('Zoom', () => (s.zoomBias === 0 ? 'Normal' : s.zoomBias > 0 ? `Closer ${s.zoomBias}` : `Further ${-s.zoomBias}`), () => (s.zoomBias = s.zoomBias >= 2 ? -1 : s.zoomBias + 1)),
         cycle('Text size', () => (s.textScale >= 1.2 ? 'Large' : s.textScale <= 0.9 ? 'Small' : 'Normal'), () => (s.textScale = s.textScale >= 1.2 ? 0.88 : s.textScale <= 0.9 ? 1 : 1.25)),
+        h('button', { onclick: () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); } }, 'Fullscreen on or off'),
         h('button', { onclick: () => this.showControls(() => this.showSettings(back)) }, 'Controls'),
         h('button', { class: 'primary', onclick: back }, 'Back')
       )

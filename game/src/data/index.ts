@@ -6,6 +6,7 @@ import recipesJson from './recipes.json';
 import enemiesJson from './enemies.json';
 import peopleJson from './people.json';
 import documentsJson from './documents.json';
+import achievementsJson from './achievements.json';
 import type { Season } from '../core/config';
 
 export interface CropDef {
@@ -110,6 +111,7 @@ export const RECIPES = recipesJson as unknown as Recipe[];
 export const ENEMIES = enemiesJson as unknown as Record<string, EnemyDef>;
 export const HANDS = (peopleJson as unknown as { hands: HandDef[] }).hands;
 export const TRADER = (peopleJson as unknown as { trader: { name: string; outfit: string } }).trader;
+export const ACHIEVEMENTS = achievementsJson as { id: string; name: string; desc: string }[];
 export const DOCUMENTS = documentsJson as Record<string, { title: string; text: string[] }>;
 export const CREW = (peopleJson as unknown as { crew: { name: string; envoy: string } }).crew;
 

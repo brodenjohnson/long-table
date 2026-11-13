@@ -19,6 +19,7 @@ import { SLOTS, SaveFile, SaveStore, deserialize, makeStore, serialize } from '.
 import { Input } from './input/input';
 import { Audio } from './audio/audio';
 import { DEFAULT_SETTINGS, GameApi, Settings, UI } from './ui/ui';
+import { Achievements } from './sim/achievements';
 
 TextureSource.defaultOptions.scaleMode = 'nearest';
 
@@ -41,6 +42,7 @@ export class Game implements GameApi {
   private lastSel = 0;
   private autosaveT = 0;
   private ambT = 0;
+  private achievements: Achievements | null = null;
 
   sim(): Sim | null {
     return this.simRef;
@@ -139,6 +141,11 @@ export class Game implements GameApi {
 
   private startSim(sim: Sim): void {
     this.simRef = sim;
+    this.achievements = new Achievements(sim);
+    this.achievements.onUnlock = (_id, name) => {
+      this.ui.toast(`Achievement: ${name}`, 'good');
+      this.audio.play('hire');
+    };
     this.renderer!.setSim(sim);
     this.renderer!.warm();
     this.applySettings();
@@ -346,7 +353,10 @@ export class Game implements GameApi {
     }
     inp.endFrame();
     this.renderer.render(dt);
-    if (this.running) this.ui.updateHud(sim, dt);
+    if (this.running) {
+      this.ui.updateHud(sim, dt);
+      this.achievements?.update(dt);
+    }
     this.updateSound(sim, dt);
     this.autosaveT += dt;
     if (this.running && this.autosaveT > 90) {
