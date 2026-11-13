@@ -607,6 +607,10 @@ export class Renderer {
       const [x, y] = this.waterTiles[Math.floor(Math.random() * this.waterTiles.length)];
       if (this.inView(x, y, view)) this.fx.burst('sparkle', x + Math.random(), y + Math.random(), 0, 1);
     }
+    // Papers glint so they can be found
+    if (Math.random() < dt * 2.5) {
+      for (const o of sim.world.objects.values()) if (o.kind === 'document' && Math.random() < 0.5 && this.inView(o.x, o.y, view)) this.fx.burst('sparkle', o.x + 0.5, o.y + 0.5, 4, 1);
+    }
     // Ripe crops glint now and then
     if (Math.random() < dt * 3) {
       const ripe: number[] = [];
@@ -763,9 +767,10 @@ export class Renderer {
         s.visible = true;
         s.position.set(Math.random() * W, Math.random() * H);
       }
-      s.y += dt * 520;
-      s.x -= dt * 130;
-      s.scale.set(this.zoom * 0.5, this.zoom * 0.9);
+      s.y += dt * 620;
+      s.x -= dt * 150;
+      s.width = Math.max(1, Math.round(this.zoom * 0.6));
+      s.height = this.zoom * 5;
       if (s.y > H) {
         s.y = -10;
         s.x = Math.random() * (W + 200);
@@ -773,5 +778,13 @@ export class Renderer {
     }
     this.dustTint.clear();
     if (w === 'dust') this.dustTint.rect(0, 0, W, H).fill({ color: 0xa07040, alpha: 0.16 });
+    if (raining) {
+      this.dustTint.rect(0, 0, W, H).fill({ color: 0x506070, alpha: 0.08 });
+      // Splashes on the ground around the player
+      if (Math.random() < dt * 40) {
+        const p = this.sim.player;
+        this.fx.burst('splash', p.x + (Math.random() - 0.5) * 18, p.y + (Math.random() - 0.5) * 18, 0, 1);
+      }
+    }
   }
 }

@@ -291,7 +291,7 @@ export class Game implements GameApi {
       // Escape, or the key that opened it, closes a menu
       const name = this.ui.screenName;
       const locked = ['title', 'notice', 'intro', 'report', 'newgame', 'load', 'credits'].includes(name);
-      if (!locked && (inp.pressed('pause') || (name === 'bag' && (inp.pressed('inventory') || inp.pressed('craft'))) || (name === 'journal' && inp.pressed('journal')))) {
+      if (!locked && (inp.pressed('pause') || (name === 'bag' && (inp.pressed('inventory') || inp.pressed('craft'))) || (name === 'journal' && inp.pressed('journal')) || (name === 'map' && inp.pressed('map')))) {
         inp.endFrame();
         this.ui.close();
       } else if (['load', 'credits', 'newgame'].includes(name) && inp.pressed('pause')) this.ui.showTitle();
@@ -303,6 +303,7 @@ export class Game implements GameApi {
       else if (inp.pressed('inventory')) this.ui.showBag('bag');
       else if (inp.pressed('craft')) this.ui.showBag('make');
       else if (inp.pressed('journal')) this.ui.showJournal();
+      else if (inp.pressed('map')) this.ui.showMap();
       for (let i = 0; i < HOTBAR; i++) if (inp.pressed(`hot${i + 1}` as 'hot1')) sim.state.sel = i;
       const wheel = inp.takeWheel();
       const step = (inp.pressed('next') ? 1 : 0) - (inp.pressed('prev') ? 1 : 0) + Math.sign(wheel);
@@ -425,6 +426,9 @@ export class Game implements GameApi {
         break;
       case 'envoy':
         this.ui.showEnvoy();
+        break;
+      case 'read':
+        this.ui.showDocument(id!);
         break;
     }
   }

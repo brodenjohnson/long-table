@@ -1,0 +1,46 @@
+{
+  "ledger": {
+    "title": "Pump ledger, a torn page",
+    "text": [
+      "Day 380. Filters changed. Pressure holding at sixty.",
+      "Register says eleven. I count ten in the ruins, wandering, tags on their wrists like they were told. One is missing and I know which.",
+      "Do not write the name. You asked me not to.",
+      "Pump first. Scrubber second. Everything else is a luxury now, including me."
+    ]
+  },
+  "memo": {
+    "title": "Meridian Trust, internal memo",
+    "text": [
+      "RE: Receiving capacity, Valley Site.",
+      "For every sleeper brought out of cold storage the Valley must hold, at minimum: one bed under a roof, three litres of clean water a day, enough grain and roots for two thousand calories, and a wall between them and whatever is outside.",
+      "Wake them faster than the Valley can hold them and you will lose them twice.",
+      "The Director has the final say on the order. The Director has asked that nobody envy that job."
+    ]
+  },
+  "letter": {
+    "title": "A letter, never sent",
+    "text": [
+      "Mum,",
+      "They say Nell goes under on Thursday with the second group. They let me hold her hand until the lid. She was brave. I was not.",
+      "They say she wakes when the valley is ready. I asked how they decide when it is ready and the man in the grey coat just said, enough food.",
+      "So I am going to grow food. Wherever they put me. Every day. Until somebody says it is enough."
+    ]
+  },
+  "notice": {
+    "title": "Notice, nailed to a post",
+    "text": [
+      "THIS ROAD IS KEPT.",
+      "Farms and holdings on the west road pay a fair share to those who keep it. Pay and your trucks get through. Pay and your crops stay in the ground.",
+      "We do not ask twice.",
+      "Signed with a mark like a split leaf."
+    ]
+  },
+  "tape": {
+    "title": "Cassette label, written in pencil",
+    "text": [
+      "UNIT 11. PLAY IF LOST.",
+      "The tape inside is ruined, wound round itself into a knot.",
+      "The handwriting on the label is yours."
+    ]
+  }
+}

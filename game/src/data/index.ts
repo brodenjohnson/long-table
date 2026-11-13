@@ -5,6 +5,7 @@ import objectsJson from './objects.json';
 import recipesJson from './recipes.json';
 import enemiesJson from './enemies.json';
 import peopleJson from './people.json';
+import documentsJson from './documents.json';
 import type { Season } from '../core/config';
 
 export interface CropDef {
@@ -55,7 +56,7 @@ export interface ObjectDef {
   h: number;
   tool?: 'axe' | 'pick' | 'any';
   drops?: [string, number, number][];
-  interact?: 'sleep' | 'water' | 'depot' | 'radio' | 'compost';
+  interact?: 'sleep' | 'water' | 'depot' | 'radio' | 'compost' | 'read';
   placed?: boolean;
   light?: number;
   husksBreak?: boolean;
@@ -67,6 +68,8 @@ export interface Recipe {
   out: string;
   n: number;
   in: Record<string, number>;
+  /** Where it must be made: 'fire' means within reach of the campfire. */
+  at?: 'fire';
 }
 
 export interface EnemyDef {
@@ -107,6 +110,7 @@ export const RECIPES = recipesJson as unknown as Recipe[];
 export const ENEMIES = enemiesJson as unknown as Record<string, EnemyDef>;
 export const HANDS = (peopleJson as unknown as { hands: HandDef[] }).hands;
 export const TRADER = (peopleJson as unknown as { trader: { name: string; outfit: string } }).trader;
+export const DOCUMENTS = documentsJson as Record<string, { title: string; text: string[] }>;
 export const CREW = (peopleJson as unknown as { crew: { name: string; envoy: string } }).crew;
 
 /** Sell price of produce, before quality, contamination and demand. */

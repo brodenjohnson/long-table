@@ -36,7 +36,7 @@ export type SimEvent =
   | { t: 'decal'; kind: string; x: number; y: number }
   | { t: 'shake'; amt: number }
   | { t: 'hitstop'; ms: number }
-  | { t: 'open'; what: 'depot' | 'shop' | 'hire' | 'hand' | 'sleep' | 'compost' | 'radio' | 'envoy'; id?: string }
+  | { t: 'open'; what: 'depot' | 'shop' | 'hire' | 'hand' | 'sleep' | 'compost' | 'radio' | 'envoy' | 'read'; id?: string }
   | { t: 'dayEnded'; passedOut: boolean }
   | { t: 'tracer'; x0: number; y0: number; x1: number; y1: number }
   | { t: 'ground'; x: number; y: number }
@@ -608,6 +608,12 @@ export class Sim {
     }
   }
 
+  /** Close enough to the campfire to cook. */
+  nearFire(): boolean {
+    for (const o of this.world.objects.values()) if (o.kind === 'campfire' && Math.hypot(o.x + 0.5 - this.player.x, o.y + 0.5 - this.player.y) < 3) return true;
+    return false;
+  }
+
   canSize(): number {
     return this.selected()?.id === 'can2' ? 40 : 20;
   }
@@ -957,6 +963,14 @@ export class Sim {
       case 'compost':
         this.useCompostBin(t.obj!);
         break;
+      case 'read': {
+        const doc = String(t.obj!.s?.doc ?? '');
+        this.world.remove(t.obj!);
+        this.state.flags['read:' + doc] = 1;
+        this.sfx('rustle', t.x, t.y);
+        this.emit({ t: 'open', what: 'read', id: doc });
+        break;
+      }
       case 'shop':
         this.emit({ t: 'open', what: 'shop' });
         break;
@@ -1107,7 +1121,7 @@ export class Sim {
     }
     const o = this.world.objectAt(tile.x, tile.y);
     if (o && OBJECTS[o.kind].interact && !this.hint) {
-      const map: Record<string, string> = { sleep: 'Sleep', water: 'Fill can', depot: 'Open crate', radio: 'Listen', compost: 'Compost' };
+      const map: Record<string, string> = { sleep: 'Sleep', water: 'Fill can', depot: 'Open crate', radio: 'Listen', compost: 'Compost', read: 'Read' };
       this.hint = map[OBJECTS[o.kind].interact!] ?? '';
     }
     switch (def.kind) {

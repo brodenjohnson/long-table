@@ -41,5 +41,10 @@
   "bunk": {"name": "Bunk", "kind": "place", "place": "bunk", "sell": 20, "desc": "A bed for one hired hand."},
   "rain_barrel": {"name": "Rain Barrel", "kind": "place", "place": "rain_barrel", "sell": 14, "desc": "Fills when it rains. Refill the can here."},
   "spike_trap": {"name": "Spike Trap", "kind": "place", "place": "spike_trap", "sell": 10, "desc": "Hurts what walks over it. Not you."},
-  "sprinkler": {"name": "Sprinkler", "kind": "place", "place": "sprinkler", "sell": 30, "desc": "Waters the four tiles beside it every morning."}
+  "sprinkler": {"name": "Sprinkler", "kind": "place", "place": "sprinkler", "sell": 30, "desc": "Waters the four tiles beside it every morning."},
+  "roast_potato": {"name": "Roast Potato", "kind": "food", "sell": 40, "stamina": 34, "health": 4, "desc": "Black on the outside. Good on the inside."},
+  "corn_cakes": {"name": "Corn Cakes", "kind": "food", "sell": 105, "stamina": 48, "health": 6, "desc": "Fried flat on a hot stone."},
+  "tomato_soup": {"name": "Tomato Soup", "kind": "food", "sell": 90, "stamina": 40, "health": 14, "desc": "Thin, sharp and hot."},
+  "field_stew": {"name": "Field Stew", "kind": "food", "sell": 130, "stamina": 75, "health": 18, "desc": "Whatever came out of the ground today, in one pot."},
+  "pumpkin_mash": {"name": "Pumpkin Mash", "kind": "food", "sell": 260, "stamina": 95, "health": 22, "desc": "Sweet enough to feel like a holiday."}
 }

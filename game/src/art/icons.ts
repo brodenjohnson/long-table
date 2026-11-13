@@ -188,6 +188,26 @@ function misc(id: string): Cv {
       poly(c, [5, 3, 11, 3, 11, 5, 5, 5], '#4a6a8a');
       px(c, 7, 8, '#4a6a8a', 2, 3);
       break;
+    case 'roast_potato':
+      ellipse(c, 8, 9, 5, 4, '#6a4a2a');
+      px(c, 6, 7, '#b08850', 3, 2);
+      px(c, 10, 10, '#2a1a10', 2, 1);
+      break;
+    case 'corn_cakes':
+      ellipse(c, 6, 10, 4, 2.5, '#d8a848');
+      ellipse(c, 10, 8, 4, 2.5, '#e8c060');
+      px(c, 9, 7, '#f8e090', 3, 1);
+      break;
+    case 'tomato_soup':
+    case 'field_stew':
+    case 'pumpkin_mash': {
+      const col = id === 'tomato_soup' ? '#c84a2e' : id === 'field_stew' ? '#8a6a3a' : '#e07a2a';
+      poly(c, [2, 8, 14, 8, 12, 14, 4, 14], '#8a7a62');
+      ellipse(c, 8, 8, 6, 2, col);
+      px(c, 6, 7, '#f0e0c0', 2, 1);
+      if (id === 'field_stew') { px(c, 5, 8, '#5a7a30', 1, 1); px(c, 10, 8, '#c8465a', 1, 1); }
+      break;
+    }
     case 'rounds':
       for (let i = 0; i < 3; i++) {
         poly(c, [3 + i * 4, 6, 6 + i * 4, 6, 6 + i * 4, 14, 3 + i * 4, 14], '#c8a050');

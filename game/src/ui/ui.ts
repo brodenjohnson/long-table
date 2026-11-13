@@ -2,7 +2,10 @@
 import './ui.css';
 import { h, clear } from './dom';
 import { iconURL } from '../art/icons';
-import { CREW, CROPS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
+import { CREW, CROPS, DOCUMENTS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
+import { MAP_H, MAP_W } from '../core/config';
+import { T } from '../sim/world';
+import { PLACES } from '../sim/worldgen';
 import { addItem, countItem, removeItem } from '../sim/inventory';
 import { HOTBAR, dayOfSeason, seasonOf, timeString, weekday, Stack } from '../sim/state';
 import type { Sim } from '../sim/sim';
@@ -242,9 +245,9 @@ export class UI {
   toast(text: string, kind: 'info' | 'good' | 'bad' = 'info'): void {
     const el = h('div', { class: `panel toast ${kind}` }, text);
     this.toasts.append(el);
-    while (this.toasts.children.length > 5) this.toasts.firstChild!.remove();
-    setTimeout(() => el.classList.add('out'), 5200);
-    setTimeout(() => el.remove(), 5800);
+    while (this.toasts.children.length > 4) this.toasts.firstChild!.remove();
+    setTimeout(() => el.classList.add('out'), 4800);
+    setTimeout(() => el.remove(), 5400);
   }
 
   float(text: string, x: number, y: number, colour = '#e8e0c8'): void {
@@ -655,9 +658,16 @@ export class UI {
           h('span', null, `Scrip ${ps.scrip}`), h('span', null, `Rounds ${countItem(st.inv, 'rounds')}`), h('span', null, `Dose ${Math.round(ps.dose)}`)));
     } else {
       const list = h('div', { class: 'list' });
-      for (const r of RECIPES) {
+      const fire = sim.nearFire();
+      const sorted = [...RECIPES].sort((a, b) => (a.at ? 1 : 0) - (b.at ? 1 : 0));
+      let shownFireHeader = false;
+      for (const r of sorted) {
         const out = ITEMS[r.out];
-        const can = Object.entries(r.in).every(([k, n]) => countItem(st.inv, k) >= n);
+        if (r.at === 'fire' && !shownFireHeader) {
+          shownFireHeader = true;
+          list.append(h('h3', null, fire ? 'Cooking at the fire' : 'Cooking (stand by the campfire)'));
+        }
+        const can = Object.entries(r.in).every(([k, n]) => countItem(st.inv, k) >= n) && (r.at !== 'fire' || fire);
         const need = Object.entries(r.in).map(([k, n]) => {
           const have = countItem(st.inv, k);
           return h('span', { class: have >= n ? '' : 'bad' }, `${ITEMS[k].name} ${have}/${n}  `);
@@ -666,13 +676,14 @@ export class UI {
           let made = 0;
           for (let t = 0; t < times; t++) {
             if (!Object.entries(r.in).every(([k, n]) => countItem(st.inv, k) >= n)) break;
+            if (r.at === 'fire' && !sim.nearFire()) break;
             for (const [k, n] of Object.entries(r.in)) removeItem(st.inv, k, n);
             const left = addItem(st.inv, { id: r.out, n: r.n });
             if (left) sim.drop({ id: r.out, n: left }, sim.player.x, sim.player.y);
             made++;
           }
           if (made) {
-            this.audio.play('place');
+            this.audio.play(r.at === 'fire' ? 'eat' : 'place');
             this.toast(`Made ${made * r.n} ${out.name}.`, 'good');
           }
           this.showBag('make');
@@ -873,6 +884,85 @@ export class UI {
         h('button', { onclick: () => this.close() }, 'Say nothing yet'))
     );
     this.show('envoy', panel);
+  }
+
+  showDocument(key: string): void {
+    const sim = this.game.sim()!;
+    const d = DOCUMENTS[key];
+    if (!d) return;
+    if (!sim.state.journal.some(j => j.text === `Found: ${d.title}.`)) sim.state.journal.push({ day: sim.state.day, text: `Found: ${d.title}.` });
+    const panel = h('div', { class: 'note' },
+      h('p', { style: { fontWeight: '600' } }, d.title),
+      d.text.map(t => h('p', null, t)),
+      h('button', { class: 'primary', onclick: () => this.close() }, 'Keep it')
+    );
+    this.show('read', panel);
+  }
+
+  showMap(): void {
+    const sim = this.game.sim()!;
+    const w = sim.world;
+    const S = 3;
+    const cw = (MAP_W + MAP_H) * S;
+    const ch = (MAP_W + MAP_H) * S * 0.5;
+    const cv = h('canvas', { width: cw, height: ch, style: { width: '100%', imageRendering: 'pixelated', display: 'block' } }) as HTMLCanvasElement;
+    const ctx = cv.getContext('2d')!;
+    const col: Record<number, string> = {
+      [T.Grass]: '#56632f', [T.Dry]: '#86744a', [T.Dirt]: '#664e36', [T.Track]: '#7a6448', [T.Road]: '#3c3a38', [T.Water]: '#2e555c',
+      [T.Deep]: '#1e3a42', [T.Ash]: '#66625c', [T.Concrete]: '#6b675f', [T.Sand]: '#8f7d5a'
+    };
+    const at = (x: number, y: number) => [(x - y + MAP_H) * S, (x + y) * S * 0.5] as const;
+    for (let y = 0; y < MAP_H; y++)
+      for (let x = 0; x < MAP_W; x++) {
+        const k = y * MAP_W + x;
+        let c = col[w.terrain[k]];
+        if (w.tilled[k]) c = '#3a2a1e';
+        if (w.crops.has(k) && !w.crops.get(k)!.dead) c = '#6a9a3a';
+        const o = w.objAt[k] ? w.objects.get(w.objAt[k]) : null;
+        if (o) {
+          if (o.kind.startsWith('tree')) c = '#2c4532';
+          else if (o.kind === 'ruin_wall') c = '#8a857a';
+          else if (o.kind === 'farmhouse') c = '#a0583a';
+          else if (o.kind === 'fence' || o.kind === 'gate') c = '#c8a878';
+        }
+        const [px, py] = at(x, y);
+        ctx.fillStyle = c;
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(px + S, py + S * 0.5);
+        ctx.lineTo(px, py + S);
+        ctx.lineTo(px - S, py + S * 0.5);
+        ctx.fill();
+      }
+    const label = (x: number, y: number, text: string, colour = '#f0e6c8') => {
+      const [px, py] = at(x, y);
+      ctx.font = '10px Pixelify Sans, monospace';
+      ctx.fillStyle = '#000';
+      ctx.fillText(text, px - ctx.measureText(text).width / 2 + 1, py + 1);
+      ctx.fillStyle = colour;
+      ctx.fillText(text, px - ctx.measureText(text).width / 2, py);
+    };
+    label(PLACES.house.x + 2, PLACES.house.y - 1, 'Home');
+    label(PLACES.crate.x, PLACES.crate.y + 3, 'Depot');
+    label(70, 10, 'Ruins');
+    label(86, 6, 'Ash flats', '#c8c0b0');
+    label(20, 20, 'The creek', '#a8d0d8');
+    label(90, 63, 'Road to the Hull', '#e8b070');
+    label(16, 12, 'Pines', '#a8c890');
+    // You
+    const [mx, my] = at(sim.player.x, sim.player.y);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(mx - 2, my - 2, 5, 5);
+    ctx.fillStyle = '#d8742a';
+    ctx.fillRect(mx - 1, my - 1, 3, 3);
+    const found = Object.keys(DOCUMENTS).filter(k => sim.state.flags['read:' + k]).length;
+    const panel = h('div', { class: 'panel modal', style: { width: 'min(92vw, 1000px)', maxWidth: 'min(92vw, 1000px)' } },
+      h('div', { class: 'row spread' }, h('h2', null, 'The valley'), h('span', { class: 'faint' }, `Papers found ${found} of ${Object.keys(DOCUMENTS).length}`)),
+      cv,
+      h('p', { class: 'faint' }, 'The orange square is you. Husks come from the ruins and the ash flats in the north-east. The Crew use the road.'),
+      h('button', { class: 'primary', onclick: () => this.close() }, 'Close')
+    );
+    this.show('map', panel);
   }
 
   showJournal(): void {

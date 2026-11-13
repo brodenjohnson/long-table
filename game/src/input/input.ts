@@ -3,7 +3,7 @@
 export type Action =
   | 'up' | 'down' | 'left' | 'right'
   | 'use' | 'interact' | 'dodge' | 'lantern'
-  | 'inventory' | 'craft' | 'journal' | 'pause'
+  | 'inventory' | 'craft' | 'journal' | 'pause' | 'map'
   | 'hot1' | 'hot2' | 'hot3' | 'hot4' | 'hot5' | 'hot6' | 'hot7' | 'hot8' | 'hot9' | 'hot10'
   | 'next' | 'prev' | 'zoomIn' | 'zoomOut';
 
@@ -19,6 +19,7 @@ export const DEFAULT_KEYS: Record<Action, string[]> = {
   inventory: ['Tab', 'KeyI'],
   craft: ['KeyC'],
   journal: ['KeyJ'],
+  map: ['KeyM'],
   pause: ['Escape'],
   hot1: ['Digit1'], hot2: ['Digit2'], hot3: ['Digit3'], hot4: ['Digit4'], hot5: ['Digit5'],
   hot6: ['Digit6'], hot7: ['Digit7'], hot8: ['Digit8'], hot9: ['Digit9'], hot10: ['Digit0'],
@@ -30,7 +31,7 @@ export const DEFAULT_KEYS: Record<Action, string[]> = {
 
 export const ACTION_LABELS: Partial<Record<Action, string>> = {
   up: 'Move up', down: 'Move down', left: 'Move left', right: 'Move right', interact: 'Interact, harvest, talk',
-  dodge: 'Dodge roll', lantern: 'Lantern', inventory: 'Bag', craft: 'Make things', journal: 'Journal', pause: 'Menu',
+  dodge: 'Dodge roll', lantern: 'Lantern', inventory: 'Bag', craft: 'Make things', journal: 'Journal', map: 'Map', pause: 'Menu',
   next: 'Next item', prev: 'Previous item', zoomIn: 'Zoom in', zoomOut: 'Zoom out'
 };
 

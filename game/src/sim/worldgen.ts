@@ -183,6 +183,15 @@ export function generate(world: World, seed: number): void {
   for (const [x, y] of [[34, 45], [47, 33], [59, 44], [58, 36]] as [number, number][]) if (!world.objAt[idx(x, y)]) world.add('tree_dead', x, y, Math.floor(rng() * 3));
   for (const [x, y] of [[60, 52], [33, 39]] as [number, number][]) if (!world.objAt[idx(x, y)]) world.add('scrap_pile', x, y, 1);
 
+  // Papers to find
+  const docs: [string, number, number][] = [['ledger', 67, 15], ['memo', 77, 14], ['letter', 69, 27], ['notice', 80, 57], ['tape', 35, 44]];
+  for (const [doc, x, y] of docs) {
+    const k = idx(x, y);
+    const o = world.objAt[k] ? world.objects.get(world.objAt[k]) : undefined;
+    if (o) world.remove(o);
+    world.add('document', x, y, 0, { doc });
+  }
+
   world.terrainVersion++;
 }
 

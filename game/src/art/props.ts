@@ -553,6 +553,17 @@ function sprinkler(): { cv: Cv; ax: number; ay: number } {
   return { cv: iso.cv, ax: bx, ay: by };
 }
 
+function papers(): { cv: Cv; ax: number; ay: number } {
+  const cv = makeCanvas(16, 10);
+  const ctx = cv.ctx;
+  poly(ctx, [2, 5, 9, 2, 14, 5, 7, 8], '#d8ccb0');
+  poly(ctx, [4, 6, 10, 3, 13, 5, 7, 8], '#e8dec4');
+  px(ctx, 6, 5, '#7a6a50', 4, 1);
+  px(ctx, 7, 6, '#7a6a50', 3, 1);
+  finish(cv);
+  return { cv, ax: 8, ay: 6 };
+}
+
 function shadowTex(rx: number, ry: number): Cv {
   const cv = makeCanvas(rx * 2 + 2, ry * 2 + 2);
   ellipse(cv.ctx, rx + 1, ry + 1, rx, ry, '#000000');
@@ -605,6 +616,7 @@ export function paintProps(atlas: Atlas): void {
   add('obj:rain_barrel:full', rainBarrel(true));
   add('obj:spike_trap:0', spikeTrap());
   add('obj:sprinkler:0', sprinkler());
+  add('obj:document:0', papers());
   for (const [n, rx, ry] of [['s', 5, 2], ['m', 8, 4], ['l', 13, 6], ['xl', 40, 20]] as [string, number, number][]) {
     const c = shadowTex(rx, ry);
     atlas.add(`shadow:${n}`, c, c.w / 2, c.h / 2);

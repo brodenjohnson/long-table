@@ -20,5 +20,6 @@
   "rain_barrel": {"name": "Rain Barrel", "solid": true, "hp": 0, "tool": "any", "drops": [["rain_barrel", 1, 1]], "placed": true, "interact": "water"},
   "spike_trap": {"name": "Spike Trap", "solid": false, "hp": 0, "tool": "any", "drops": [["spike_trap", 1, 1]], "placed": true},
   "sprinkler": {"name": "Sprinkler", "solid": true, "hp": 0, "tool": "any", "drops": [["sprinkler", 1, 1]], "placed": true},
-  "campfire": {"name": "Campfire", "solid": true, "hp": 0, "light": 4.5}
+  "campfire": {"name": "Campfire", "solid": true, "hp": 0, "light": 4.5},
+  "document": {"name": "Papers", "solid": false, "hp": 0, "interact": "read"}
 }
