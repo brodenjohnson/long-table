@@ -30,6 +30,8 @@ export function endDay(sim: Sim, passedOut: boolean): void {
   const w = sim.world;
   const report: string[] = [];
   sim.collectPickups();
+  // The rest of the night happens while you sleep
+  report.push(...sim.night.resolveOffscreen());
   sim.night.husks = [];
   sim.action = null;
   sim.roll = null;
@@ -178,6 +180,8 @@ export function endDay(sim: Sim, passedOut: boolean): void {
   if (dayOfSeason(st.day) === SEASON_DAYS - 2) report.push(`Two days left in the ${season} season.`);
 
   st.minute = DAY_START;
+  report.push(...sim.notes);
+  sim.notes = [];
   st.report = report;
   sim.emit({ t: 'dayEnded', passedOut });
   void ITEMS;

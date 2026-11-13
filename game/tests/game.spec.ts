@@ -1,7 +1,7 @@
 // Regression tests. They drive the game through window.__game and check the simulation.
 import { test, expect, Page } from '@playwright/test';
 
-async function boot(page: Page): Promise<string[]> {
+async function boot(page: Page, difficulty = 'normal'): Promise<string[]> {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(String(e)));
   page.on('console', m => {
@@ -9,10 +9,10 @@ async function boot(page: Page): Promise<string[]> {
   });
   await page.goto('/');
   await page.waitForFunction(() => (window as any).__game?.ready, null, { timeout: 30_000 });
-  await page.evaluate(() => {
+  await page.evaluate(d => {
     localStorage.clear();
-    (window as any).__game.newGame('Tester');
-  });
+    (window as any).__game.newGame('Tester', d);
+  }, difficulty);
   return errors;
 }
 
@@ -31,7 +31,7 @@ test('boots to a new game with no errors', async ({ page }) => {
 });
 
 test('till, plant, water, grow and harvest', async ({ page }) => {
-  await boot(page);
+  await boot(page, 'peaceful');
   const r = await page.evaluate(() => {
     const g = (window as any).__game;
     const s = g.sim;
@@ -228,4 +228,85 @@ test('sunflowers clean contaminated ground', async ({ page }) => {
   });
   expect(r.before).toBeGreaterThan(0.38);
   expect(r.after).toBeLessThan(r.before - 0.2);
+});
+
+test('sleeping early does not skip the night: unguarded crops get trampled, a fence holds', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    const w = s.world;
+    const plantField = () => {
+      for (let y = 40; y < 48; y++)
+        for (let x = 46; x < 56; x++) {
+          const k = y * 96 + x;
+          const o = w.objectAt(x, y);
+          if (o && o.kind !== 'fence' && o.kind !== 'gate') w.remove(o);
+          w.tilled[k] = 1;
+          w.crops.set(k, { kind: 'radish', age: 1, wet: true, dry: 0, ripe: false, regrowIn: 0, picked: false, care: 1, dead: false });
+        }
+    };
+    // Night one, day 8 so there are plenty of Husks, no fence
+    s.state.day = 8;
+    plantField();
+    s.state.minute = 19 * 60;
+    s.requestSleep();
+    g.advance(0.05);
+    g.closeUi();
+    let dead1 = 0;
+    for (const c of w.crops.values()) if (c.dead) dead1++;
+    // Night two: ring the field with fence
+    w.crops.clear();
+    plantField();
+    for (let x = 44; x <= 58; x++) for (const y of [37, 52]) { const o = w.objectAt(x, y); if (o) w.remove(o); w.add('fence', x, y); }
+    for (let y = 38; y <= 51; y++) for (const x of [44, 58]) { const o = w.objectAt(x, y); if (o) w.remove(o); w.add('fence', x, y); }
+    const enclosed = s.night.fieldEnclosed();
+    s.state.minute = 19 * 60;
+    s.requestSleep();
+    g.advance(0.05);
+    g.closeUi();
+    let dead2 = 0;
+    for (const c of w.crops.values()) if (c.dead) dead2++;
+    return { dead1, dead2, enclosed, report: s.state.report };
+  });
+  expect(r.dead1).toBeGreaterThan(0);
+  expect(r.enclosed).toBe(true);
+  expect(r.dead2).toBeLessThan(r.dead1);
+});
+
+test('a hand on guard fights Husks at night', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    s.hands.hire('tomas');
+    const h = s.state.hands[0];
+    h.job = 'guard';
+    s.state.minute = 22 * 60;
+    h.x = 52; h.y = 36.5;
+    s.player.x = 30; s.player.y = 60;
+    const hk = s.night.spawn({ x: 54, y: 36.5 });
+    g.advance(12);
+    return { husk: hk.state, hp: hk.hp };
+  });
+  expect(r.hp).toBeLessThan(44);
+});
+
+test('the steel hoe turns three tiles at once', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    const w = s.world;
+    s.state.inv[0] = { id: 'hoe2', n: 1 };
+    s.state.sel = 0;
+    for (let x = 46; x < 52; x++) { const o = w.objectAt(x, 42); if (o) w.remove(o); }
+    s.player.x = 45.5; s.player.y = 42.5;
+    g.stepWith({ usePressed: true, use: true, aim: { x: 46.5, y: 42.5 } });
+    g.advance(0.6);
+    let n = 0;
+    for (let x = 46; x < 50; x++) if (w.tilled[42 * 96 + x]) n++;
+    return n;
+  });
+  expect(r).toBe(3);
 });

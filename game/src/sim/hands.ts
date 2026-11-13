@@ -18,6 +18,9 @@ interface HandRt {
   tool: Tool;
   repath: number;
   idleT: number;
+  hp: number;
+  wounded: boolean;
+  attackCd: number;
 }
 
 const SPEED = 2.5;
@@ -36,7 +39,7 @@ export class HandSystem {
   runtime(h: HandState): HandRt {
     let r = this.rt.get(h.id);
     if (!r) {
-      r = { path: [], task: null, timer: 0, anim: 'idle', animT: 0, tool: 'none', repath: 0, idleT: 0 };
+      r = { path: [], task: null, timer: 0, anim: 'idle', animT: 0, tool: 'none', repath: 0, idleT: 0, hp: 60, wounded: false, attackCd: 0 };
       this.rt.set(h.id, r);
     }
     return r;
@@ -53,7 +56,57 @@ export class HandSystem {
 
   asleep(h: HandState): boolean {
     const m = this.sim.state.minute % (24 * 60);
+    if (h.job === 'guard') return m >= 8 * 60 && m < 15 * 60 + 30;
     return m >= 21 * 60 + 30 || m < 6 * 60 + 30;
+  }
+
+  /** Guards awake and standing, for Husks to go after. */
+  activeGuards(): HandState[] {
+    return this.sim.state.hands.filter(h => h.job === 'guard' && !this.asleep(h) && !this.runtime(h).wounded);
+  }
+
+  hurt(h: HandState, dmg: number, fromX: number, fromY: number): void {
+    const s = this.sim;
+    const r = this.runtime(h);
+    if (r.wounded) return;
+    r.hp -= dmg;
+    s.emit({ t: 'fx', kind: 'blood', x: h.x, y: h.y, z: 12, n: 6 });
+    s.sfx('hurt', h.x, h.y, 0.7);
+    void fromX;
+    void fromY;
+    if (r.hp <= 0) {
+      r.wounded = true;
+      r.anim = 'dead';
+      h.morale -= 15;
+      s.toast(`${this.def(h.id).name} is down.`, 'bad');
+      s.notes.push(`${this.def(h.id).name} was hurt on watch.`);
+    }
+  }
+
+  /** While you sleep: guards on duty account for some of the Husks still to come. */
+  resolveGuards(pending: number): { kills: number; lines: string[] } {
+    const s = this.sim;
+    let kills = 0;
+    const lines: string[] = [];
+    for (const h of s.state.hands) {
+      if (h.job !== 'guard' || this.runtime(h).wounded || pending - kills <= 0) continue;
+      const d = this.def(h.id);
+      const k = Math.min(pending - kills, Math.max(0, d.nerve - 1 + Math.floor(s.rng() * 2)));
+      kills += k;
+      if (k) {
+        h.morale += 2;
+        lines.push(`${d.name} put down ${k} ${k === 1 ? 'Husk' : 'Husks'} on watch.`);
+      }
+      if (s.rng() < 0.1 + 0.04 * (pending - kills)) {
+        h.morale -= 12;
+        lines.push(`${d.name} took a bad scratch holding the line.`);
+      }
+      if (d.nerve < 2) {
+        h.morale -= 6;
+        lines.push(`${d.name} did not sleep. Standing watch frightens them.`);
+      }
+    }
+    return { kills, lines };
   }
 
   freeBunk(): number {
@@ -105,7 +158,7 @@ export class HandSystem {
     if (s.rng() > chance) return;
     const pick = pool[Math.floor(s.rng() * pool.length)];
     s.state.applicant = { id: pick.id, day: s.state.day };
-    s.state.report.push(`Someone is waiting at the gate by the road, looking for work.`);
+    s.notes.push('Someone is waiting at the gate by the road, looking for work.');
   }
 
   /** End of day: wages, beds, morale, and whether anyone leaves. */
@@ -161,6 +214,8 @@ export class HandSystem {
       const r = this.runtime(h);
       r.path = [];
       r.task = null;
+      r.hp = 60;
+      r.wounded = false;
     }
     return lines;
   }
@@ -256,6 +311,14 @@ export class HandSystem {
       return;
     }
     if (r.task?.kind === 'bed') r.task = null;
+    if (r.wounded) {
+      r.anim = 'dead';
+      return;
+    }
+    if (h.job === 'guard' && (m >= 20 * 60 || m < 5 * 60 + 30)) {
+      this.guardDuty(h, r);
+      return;
+    }
 
     const working = m >= 7 * 60 && m < 18 * 60 && h.job === 'tend';
     if (!working) {
@@ -342,6 +405,66 @@ export class HandSystem {
     }
   }
 
+  private guardDuty(h: HandState, r: HandRt): void {
+    const s = this.sim;
+    if (r.attackCd > 0) r.attackCd -= STEP;
+    // Nearest Husk within reach of the post
+    let best: (typeof s.night.husks)[number] | null = null;
+    let bd = 7;
+    for (const k of s.night.husks) {
+      if (k.state === 'dead' || k.state === 'leave') continue;
+      const d = Math.hypot(k.x - h.x, k.y - h.y);
+      if (d < bd) {
+        bd = d;
+        best = k;
+      }
+    }
+    if (best) {
+      r.path = [];
+      r.task = null;
+      if (bd > 0.95) {
+        const dx = best.x - h.x;
+        const dy = best.y - h.y;
+        const sp = SPEED * 1.1 * STEP;
+        const nx = h.x + (dx / bd) * sp;
+        const ny = h.y + (dy / bd) * sp;
+        if (s.world.walkable(Math.floor(nx), Math.floor(h.y), true)) h.x = nx;
+        if (s.world.walkable(Math.floor(h.x), Math.floor(ny), true)) h.y = ny;
+        this.face(h, best.x, best.y);
+        if (r.anim !== 'walk') {
+          r.anim = 'walk';
+          r.animT = 0;
+        }
+        r.tool = 'none';
+      } else if (r.attackCd <= 0) {
+        this.face(h, best.x, best.y);
+        r.anim = 'swing';
+        r.tool = 'machete';
+        r.animT = 0;
+        r.attackCd = 0.95;
+        const d = this.def(h.id);
+        s.night.damage(best, 9 + d.nerve * 3, h.x, h.y, false);
+        s.sfx('swish', h.x, h.y, 0.6);
+      } else if (r.animT > 0.46) r.anim = 'idle';
+      return;
+    }
+    // Stand at the post by the field, facing out
+    const f = PLACES.field;
+    const px = f.x1 + 1.5 - (this.sim.state.hands.indexOf(h) % 2) * 3;
+    const py = f.y0 - 1.5;
+    if (Math.hypot(px - h.x, py - h.y) > 0.4) {
+      if (!r.path.length && (r.task?.kind !== 'rest' || r.task.x !== px)) {
+        r.task = { kind: 'rest', x: px, y: py };
+        this.goTo(h, r, px, py);
+      }
+      this.walk(h, r);
+      return;
+    }
+    r.anim = 'idle';
+    r.tool = 'none';
+    h.dir = 7;
+  }
+
   private finishTask(h: HandState, r: HandRt): void {
     const s = this.sim;
     const w = s.world;
@@ -397,8 +520,8 @@ export class HandSystem {
   }
 
   /** Animation state for the renderer. */
-  view(h: HandState): { anim: Anim; animT: number; tool: Tool } {
+  view(h: HandState): { anim: Anim; animT: number; tool: Tool; wounded: boolean } {
     const r = this.runtime(h);
-    return { anim: r.anim, animT: r.animT, tool: r.tool };
+    return { anim: r.anim, animT: r.animT, tool: r.tool, wounded: r.wounded };
   }
 }

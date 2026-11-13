@@ -53,6 +53,7 @@ export class Renderer {
   private truckShadow = new Sprite();
   private lights: Sprite[] = [];
   private soilDirty = true;
+  private wobbles = new Map<number, number>();
 
   zoom = 2;
   zoomBias = 0;
@@ -144,6 +145,10 @@ export class Renderer {
     this.soilDirty = true;
   }
 
+  wobble(id: number): void {
+    this.wobbles.set(id, 0.22);
+  }
+
   addShake(a: number): void {
     this.shake = Math.min(6, this.shake + a);
   }
@@ -205,6 +210,9 @@ export class Renderer {
       y1: Math.ceil(Math.max(c0.y, c1.y, c2.y, c3.y)) + 4
     };
     this.ground.update(view, 3);
+    const tint = sim.state.weather === 'frost' ? 0xe4ecf8 : ({ Wet: 0xf2f6f0, Green: 0xffffff, Dry: 0xfff0d6, Cold: 0xe2e6ec } as Record<string, number>)[sim.season];
+    this.ground.view.tint = tint;
+    this.soil.tint = tint;
     if (this.soilDirty) this.syncSoil();
     this.syncObjects(view);
     this.syncCrops(view);
@@ -321,6 +329,16 @@ export class Renderer {
       }
       const vis = this.inView(cx, cy, view);
       e.s.visible = vis;
+      const wb = this.wobbles.get(o.id);
+      if (wb !== undefined) {
+        const p0 = toScreen(cx, cy);
+        const left = wb - 1 / 60;
+        e.s.position.x = p0.x + Math.round(Math.sin(left * 70) * left * 9);
+        if (left <= 0) {
+          this.wobbles.delete(o.id);
+          e.s.position.x = p0.x;
+        } else this.wobbles.set(o.id, left);
+      }
       if (e.shadow) e.shadow.visible = vis;
       if (e.extra) {
         e.extra.visible = vis;
@@ -572,6 +590,15 @@ export class Renderer {
     if (this.waterTiles.length && Math.random() < dt * 14) {
       const [x, y] = this.waterTiles[Math.floor(Math.random() * this.waterTiles.length)];
       if (this.inView(x, y, view)) this.fx.burst('sparkle', x + Math.random(), y + Math.random(), 0, 1);
+    }
+    // Ripe crops glint now and then
+    if (Math.random() < dt * 3) {
+      const ripe: number[] = [];
+      for (const [k, c] of sim.world.crops) if (c.ripe && !c.dead) ripe.push(k);
+      if (ripe.length) {
+        const k = ripe[Math.floor(Math.random() * ripe.length)];
+        this.fx.burst('sparkle', (k % MAP_W) + 0.3 + Math.random() * 0.4, Math.floor(k / MAP_W) + 0.3 + Math.random() * 0.4, 10 + Math.random() * 8, 1);
+      }
     }
     // Chimney smoke in the cold and the evening
     const h = (sim.state.minute / 60) % 24;

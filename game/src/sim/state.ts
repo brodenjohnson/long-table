@@ -38,7 +38,7 @@ export interface HandState {
   daysWorked: number;
   /** Object id of the bunk they sleep in, or 0 if they sleep rough. */
   bunk: number;
-  job: 'tend' | 'off';
+  job: 'tend' | 'guard' | 'off';
   water: number;
   carrying: Stack[];
 }

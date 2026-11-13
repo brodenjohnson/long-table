@@ -72,7 +72,7 @@ export class Game implements GameApi {
     const world = new World();
     generate(world, 1);
     const st = newGameState(1, 'Title', PLACES.bed.x + 3, PLACES.bed.y + 4);
-    st.minute = 18.6 * 60;
+    st.minute = 17.4 * 60;
     this.simRef = new Sim(world, st);
     this.renderer = new Renderer(this.app, this.atlas, this.simRef);
     this.renderer.warm();
@@ -90,6 +90,10 @@ export class Game implements GameApi {
     window.addEventListener('keydown', unlock);
     window.addEventListener('beforeunload', () => {
       if (this.running) this.save();
+    });
+    // Pause when the window loses focus
+    window.addEventListener('blur', () => {
+      if (this.running && !this.ui.open) this.ui.showPause();
     });
     if (!this.settings.seenNotice) this.ui.showNotice(() => this.ui.showTitle());
     else this.ui.showTitle();
@@ -139,11 +143,12 @@ export class Game implements GameApi {
     this.acc = 0;
   }
 
-  newGame(name: string): void {
+  newGame(name: string, difficulty: 'peaceful' | 'normal' | 'hard' = 'normal'): void {
     const seed = (Math.random() * 1e9) | 0;
     const world = new World();
     generate(world, seed);
     const st = newGameState(seed, name, PLACES.bed.x, PLACES.bed.y);
+    st.flags.difficulty = difficulty;
     st.journal.push({ day: 1, text: 'Woke in the valley with a note in my own handwriting.' });
     this.slot = this.freeSlot();
     this.startSim(new Sim(world, st));
@@ -323,8 +328,8 @@ export class Game implements GameApi {
       inp.takeWheel();
       if (!this.running) {
         // Title: let the evening play out behind the menu
-        sim.state.minute += dt / 2;
-        if (sim.state.minute > 20.5 * 60) sim.state.minute = 17.5 * 60;
+        sim.state.minute += dt / 3;
+        if (sim.state.minute > 19.6 * 60) sim.state.minute = 17.2 * 60;
       }
     }
     inp.endFrame();
@@ -373,6 +378,9 @@ export class Game implements GameApi {
         break;
       case 'float':
         this.ui.float(e.text, e.x, e.y, e.colour);
+        break;
+      case 'hit':
+        r.wobble(e.id);
         break;
       case 'open':
         this.openScreen(e.what, e.id);
@@ -462,10 +470,10 @@ export class Game implements GameApi {
         return g.running;
       },
       ITEMS,
-      newGame: (name = 'Tester') => {
+      newGame: (name = 'Tester', difficulty: 'peaceful' | 'normal' | 'hard' = 'normal') => {
         g.settings.seenNotice = true;
         g.ui.close();
-        g.newGame(name);
+        g.newGame(name, difficulty);
         g.ui.close();
         g.begin();
       },

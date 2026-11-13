@@ -27,9 +27,11 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = { master: 0.8, music: 0.55, sfx: 0.8, ambience: 0.7, gore: 'full', shake: true, zoomBias: 0, textScale: 1, seenNotice: false, keys: {} };
 
+export type Difficulty = 'peaceful' | 'normal' | 'hard';
+
 export interface GameApi {
   sim(): Sim | null;
-  newGame(name: string): void;
+  newGame(name: string, difficulty?: Difficulty): void;
   load(slot: number): void;
   save(): void;
   slots(): SlotInfo[];
@@ -42,6 +44,22 @@ export interface GameApi {
   worldToScreen(x: number, y: number, z?: number): { x: number; y: number };
   exportSave(): void;
   importSave(file: File): void;
+}
+
+/** Things to get done, in order. The first one not done shows on the HUD. */
+export function goals(sim: Sim): [string, boolean][] {
+  const st = sim.state;
+  const fences = [...sim.world.objects.values()].filter(o => o.kind === 'fence' || o.kind === 'gate').length;
+  return [
+    ['Clear a patch of the field and turn the soil with the hoe', !!st.flags.tilledOnce],
+    ['Plant seeds in turned soil, then water them', sim.world.crops.size > 0 || st.stats.harvested > 0],
+    ['Bring in a first harvest', st.stats.harvested > 0],
+    ['Sell something to the Hull: the depot crate or the truck', st.stats.earned > 0],
+    ['Make a bunk (wood and cloth) and hire a hand', st.hands.length > 0],
+    ['Fence in the field and leave a gate', fences >= 20],
+    ['Clean the bad ground in the east of the field with sunflowers', st.flags.cleaned === 1],
+    ['Earn 2,000 scrip in all', st.stats.earned >= 2000]
+  ];
 }
 
 const WEATHER_LABEL: Record<string, string> = { clear: 'Clear', cloud: 'Overcast', rain: 'Rain', dust: 'Dust storm', frost: 'Frost' };
@@ -62,6 +80,8 @@ export class UI {
   private itemName!: HTMLElement;
   private hintEl!: HTMLElement;
   private toasts!: HTMLElement;
+  private objective!: HTMLElement;
+  private goalT = 0;
   private floatsEl!: HTMLElement;
   private floats: Float[] = [];
   private screen: HTMLElement | null = null;
@@ -96,8 +116,9 @@ export class UI {
     this.itemName = h('div', { class: 'itemname' });
     this.hintEl = h('div', { class: 'panel hint' });
     this.toasts = h('div', { class: 'toasts' });
+    this.objective = h('div', { class: 'panel objective' });
     this.floatsEl = h('div', { class: 'floats' });
-    this.hud.append(h('div', { class: 'vignette' }), h('div', { class: 'hurtflash' }), this.floatsEl, this.vitals, this.clockEl, this.toasts, this.hintEl, this.itemName, this.hotbar);
+    this.hud.append(h('div', { class: 'vignette' }), h('div', { class: 'hurtflash' }), this.floatsEl, this.vitals, this.objective, this.clockEl, this.toasts, this.hintEl, this.itemName, this.hotbar);
     for (let i = 0; i < HOTBAR; i++) {
       const s = h('div', { class: 'slot', 'data-i': i });
       s.addEventListener('mousedown', e => {
@@ -152,6 +173,18 @@ export class UI {
       this.clockEl.innerHTML = c;
     }
     this.hud.classList.toggle('lowhp', ps.hp < maxHp * 0.3);
+    // The next thing to do
+    this.goalT -= dt;
+    if (this.goalT <= 0) {
+      this.goalT = 1;
+      const next = goals(sim).find(g => !g[1]);
+      const text = next ? next[0] : '';
+      if (this.objective.dataset.t !== text) {
+        this.objective.dataset.t = text;
+        this.objective.innerHTML = text ? `<span class="faint">Next</span> ${text}` : '';
+        this.objective.style.display = text ? '' : 'none';
+      }
+    }
     // Hotbar
     for (let i = 0; i < HOTBAR; i++) {
       const el = this.hotbar.children[i] as HTMLElement;
@@ -343,10 +376,23 @@ export class UI {
 
   private showNewGame(): void {
     const name = h('input', { type: 'text', maxlength: 20, value: 'Unit Eleven', placeholder: 'Name' }) as HTMLInputElement;
+    let diff: Difficulty = 'normal';
+    const diffText: Record<Difficulty, string> = {
+      peaceful: 'Peaceful: no Husks. Farming, trade and hands only.',
+      normal: 'Normal: Husks come at night, more as the farm grows.',
+      hard: 'Hard: half as many again, and they hit harder on your crops.'
+    };
+    const diffNote = h('p', { class: 'faint' }, diffText[diff]);
+    const diffBtn = h('button', null, 'Normal');
+    diffBtn.addEventListener('click', () => {
+      diff = diff === 'normal' ? 'hard' : diff === 'hard' ? 'peaceful' : 'normal';
+      diffBtn.textContent = diff.charAt(0).toUpperCase() + diff.slice(1);
+      diffNote.textContent = diffText[diff];
+    });
     const start = () => {
       const n = name.value.trim() || 'Unit Eleven';
       this.close();
-      this.game.newGame(n);
+      this.game.newGame(n, diff);
     };
     name.addEventListener('keydown', e => {
       if (e.key === 'Enter') start();
@@ -357,6 +403,8 @@ export class UI {
       h('h2', null, 'New game'),
       h('p', { class: 'dim' }, 'The name on your tag.'),
       name,
+      h('div', { class: 'row', style: { marginTop: 'calc(var(--u) * 0.6)' } }, h('span', { class: 'dim' }, 'Nights'), diffBtn),
+      diffNote,
       warn,
       h('div', { class: 'row', style: { marginTop: 'calc(var(--u) * 0.8)' } }, h('button', { class: 'primary', onclick: start }, 'Begin'), h('button', { onclick: () => this.showTitle() }, 'Back'))
     );
@@ -746,8 +794,10 @@ export class UI {
 
   // ---- people
 
-  private pips(n: number): string {
-    return '#'.repeat(n) + '.'.repeat(3 - n);
+  private pips(n: number): HTMLElement {
+    const el = h('span', { class: 'pips' });
+    for (let i = 0; i < 3; i++) el.append(h('i', { class: i < n ? 'on' : '' }));
+    return el;
   }
 
   showHire(id: string): void {
@@ -759,9 +809,9 @@ export class UI {
       h('p', { class: 'quote' }, `"${d.pitch}"`),
       h('div', { class: 'keylist' },
         h('span', null, 'Wants'), h('span', { class: 'price' }, `${d.wage} scrip a day, and a bed`),
-        h('span', null, 'Watering'), h('span', { class: 'pips' }, this.pips(d.water)),
-        h('span', null, 'Harvesting'), h('span', { class: 'pips' }, this.pips(d.harvest)),
-        h('span', null, 'Nerve'), h('span', { class: 'pips' }, this.pips(d.nerve))),
+        h('span', null, 'Watering'), this.pips(d.water),
+        h('span', null, 'Harvesting'), this.pips(d.harvest),
+        h('span', null, 'Nerve'), this.pips(d.nerve)),
       h('p', { class: bunk ? 'dim' : 'warn' }, bunk ? 'You have a free bunk for them.' : 'You have no free bunk. Make one (wood and cloth) or they will sleep rough and resent it.'),
       h('p', { class: 'faint' }, 'Hands water the crops, pick what is ripe and carry it to the depot crate, from seven until six. You pay them every night. Fail to pay, and they will not stay.'),
       h('div', { class: 'row' },
@@ -788,9 +838,11 @@ export class UI {
         h('span', null, 'Wage'), h('span', { class: 'price' }, `${d.wage} a day`),
         h('span', null, 'Bed'), h('span', null, h0.bunk ? 'Has a bunk' : 'Sleeping rough'),
         h('span', null, 'Carrying'), h('span', null, carrying ? `${carrying} produce` : 'Nothing')),
+      h0.job === 'guard' ? h('p', { class: d.nerve < 2 ? 'warn' : 'dim' }, d.nerve < 2 ? 'They will stand guard if you ask, but they have no nerve for it. It will cost them.' : 'Guards sleep through the day and keep watch by the field from eight at night.') : null,
       learnt ? h('p', { class: 'quote' }, `They told you something, one evening by the fire: ${d.secret.charAt(0).toLowerCase() + d.secret.slice(1)}`) : h('p', { class: 'faint' }, 'They do not say much about where they came from. Not yet.'),
       h('div', { class: 'row wrap' },
         h('button', { class: h0.job === 'tend' ? 'primary' : '', onclick: () => { h0.job = 'tend'; this.showHand(id); } }, 'Tend the crops'),
+        h('button', { class: h0.job === 'guard' ? 'primary' : '', onclick: () => { h0.job = 'guard'; this.showHand(id); } }, 'Stand guard at night'),
         h('button', { class: h0.job === 'off' ? 'primary' : '', onclick: () => { h0.job = 'off'; this.showHand(id); } }, 'Take the day off'),
         h('button', { onclick: () => { if (confirm(`Let ${d.name} go? They will not come back.`)) { sim.hands.letGo(id); this.close(); } } }, 'Let them go'),
         h('button', { onclick: () => this.close() }, 'Done'))
@@ -801,19 +853,11 @@ export class UI {
   showJournal(): void {
     const sim = this.game.sim()!;
     const st = sim.state;
-    const goals: [string, boolean][] = [
-      ['Turn some soil and plant seeds', !!st.flags.tilledOnce],
-      ['Bring in a first harvest', st.stats.harvested > 0],
-      ['Sell something to the Hull', st.stats.earned > 0],
-      ['Make a bunk and hire a hand', st.hands.length > 0],
-      ['Put a fence around the field', [...sim.world.objects.values()].filter(o => o.kind === 'fence' || o.kind === 'gate').length >= 20],
-      ['Clean the bad ground in the field with sunflowers', st.flags.cleaned === 1],
-      ['Earn 2,000 scrip in all', st.stats.earned >= 2000]
-    ];
+    const gl = goals(sim);
     const panel = h('div', { class: 'panel modal', style: { width: 'calc(var(--u) * 34)' } },
       h('h2', null, 'Journal'),
       h('h3', null, 'Things to get done'),
-      h('div', { class: 'list' }, goals.map(([t, done]) => h('div', { class: done ? 'good' : '' }, `${done ? '[x]' : '[ ]'} ${t}`))),
+      h('div', { class: 'list' }, gl.map(([t, done]) => h('div', { class: done ? 'good' : '' }, `${done ? '[x]' : '[ ]'} ${t}`))),
       h('h3', null, 'So far'),
       h('div', { class: 'keylist' },
         h('span', null, 'Days'), h('span', null, String(st.day)),

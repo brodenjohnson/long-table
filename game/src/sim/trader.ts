@@ -147,6 +147,7 @@ export class TraderSystem {
       out.push({ id, price: ITEMS[id].price! });
     }
     for (const id of ['rounds', 'bandage', 'tinned_beans', 'flatbread', 'iodide_tabs', 'cloth', 'wood', 'scrap']) out.push({ id, price: ITEMS[id].price! });
+    for (const id of ['hoe2', 'can2']) if (!s.state.inv.some(x => x?.id === id)) out.push({ id, price: ITEMS[id].price! });
     return out;
   }
 

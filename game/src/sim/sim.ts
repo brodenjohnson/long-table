@@ -39,7 +39,8 @@ export type SimEvent =
   | { t: 'dayEnded'; passedOut: boolean }
   | { t: 'tracer'; x0: number; y0: number; x1: number; y1: number }
   | { t: 'ground'; x: number; y: number }
-  | { t: 'float'; text: string; x: number; y: number; colour?: string };
+  | { t: 'float'; text: string; x: number; y: number; colour?: string }
+  | { t: 'hit'; id: number };
 
 export interface Actor {
   x: number;
@@ -110,6 +111,8 @@ export class Sim {
   target: { x: number; y: number; ok: boolean; kind: string } | null = null;
   /** Interaction hint for the UI ("E: Sleep"). */
   hint = '';
+  /** Things that happened during the day or night that belong in the next morning report. */
+  notes: string[] = [];
 
   constructor(world: World, state: GameState) {
     this.world = world;
@@ -418,9 +421,9 @@ export class Sim {
     switch (def.kind) {
       case 'tool': {
         this.faceToward(tile.x + 0.5, tile.y + 0.5);
-        if (s.id === 'can') {
+        if (s.id === 'can' || s.id === 'can2') {
           if (this.canRefillAt(tile.x, tile.y)) {
-            ps.water = 20;
+            ps.water = this.canSize();
             this.startAction('pour', 'can', s.id, 0.45, 0.5, tile.x, tile.y, aim);
             this.sfx('refill', tile.x, tile.y);
             this.emit({ t: 'fx', kind: 'splash', x: tile.x + 0.5, y: tile.y + 0.5, n: 6 });
@@ -436,8 +439,9 @@ export class Sim {
           this.cooldown = 0.45;
           return;
         }
-        this.startAction('swing', s.id as Tool, s.id, s.id === 'hoe' ? 0.42 : 0.48, 0.6, tile.x, tile.y, aim);
-        this.cooldown = s.id === 'hoe' ? 0.44 : 0.5;
+        const t: Tool = s.id === 'hoe2' ? 'hoe' : (s.id as Tool);
+        this.startAction('swing', t, s.id, t === 'hoe' ? 0.42 : 0.48, 0.6, tile.x, tile.y, aim);
+        this.cooldown = t === 'hoe' ? 0.44 : 0.5;
         return;
       }
       case 'weapon': {
@@ -489,6 +493,33 @@ export class Sim {
     const ps = this.state.player;
     const w = this.world;
     const { tx, ty } = a;
+    const line = (n: number): { x: number; y: number }[] => {
+      const out = [{ x: tx, y: ty }];
+      if (n <= 1) return out;
+      // Continue away from the player along the main axis
+      const dx = tx + 0.5 - this.player.x;
+      const dy = ty + 0.5 - this.player.y;
+      const sx = Math.abs(dx) >= Math.abs(dy) ? Math.sign(dx) || 1 : 0;
+      const sy = sx ? 0 : Math.sign(dy) || 1;
+      for (let i = 1; i < n; i++) out.push({ x: tx + sx * i, y: ty + sy * i });
+      return out;
+    };
+    if (a.tool === 'hoe' && a.item === 'hoe2') {
+      this.spendStamina(3);
+      for (const t of line(3)) this.tillOne(t.x, t.y, false);
+      this.sfx('hoe', tx, ty);
+      return;
+    }
+    if (a.tool === 'can' && a.item === 'can2') {
+      this.spendStamina(1.5);
+      this.emit({ t: 'fx', kind: 'water', x: tx + 0.5, y: ty + 0.5, n: 14 });
+      this.sfx('water', tx, ty);
+      for (const t of line(3)) {
+        if (ps.water <= 0) break;
+        if (this.waterOne(t.x, t.y)) ps.water = Math.max(0, ps.water - 1);
+      }
+      return;
+    }
     switch (a.tool) {
       case 'hoe': {
         this.spendStamina(2);
@@ -573,6 +604,47 @@ export class Sim {
     }
   }
 
+  canSize(): number {
+    return this.selected()?.id === 'can2' ? 40 : 20;
+  }
+
+  /** Till one tile if possible. Returns true if it changed. */
+  tillOne(x: number, y: number, sound = true): boolean {
+    const w = this.world;
+    const o = w.objectAt(x, y);
+    if (o && o.kind === 'weed') {
+      this.damageObject(o, 9, 'hoe');
+      return true;
+    }
+    if (!this.tillable(x, y)) return false;
+    const k = idx(x, y);
+    const crop = w.crops.get(k);
+    if (crop && crop.dead) {
+      w.crops.delete(k);
+      this.emit({ t: 'fx', kind: 'soil', x: x + 0.5, y: y + 0.5, n: 6 });
+      return true;
+    }
+    if (w.tilled[k]) return false;
+    w.tilled[k] = 1;
+    this.emit({ t: 'ground', x, y });
+    this.emit({ t: 'fx', kind: 'soil', x: x + 0.5, y: y + 0.5, n: 6 });
+    if (sound) this.sfx('hoe', x, y);
+    return true;
+  }
+
+  /** Water one tilled tile. Returns true if it was dry. */
+  waterOne(x: number, y: number): boolean {
+    const w = this.world;
+    if (!inMap(x, y)) return false;
+    const k = idx(x, y);
+    if (!w.tilled[k] || w.wet[k]) return false;
+    w.wet[k] = 1;
+    const c = w.crops.get(k);
+    if (c) c.wet = true;
+    this.emit({ t: 'ground', x, y });
+    return true;
+  }
+
   removeItemById(id: string, n: number): void {
     for (let i = 0; i < this.state.inv.length && n > 0; i++) {
       const s = this.state.inv[i];
@@ -618,6 +690,7 @@ export class Sim {
       return;
     }
     o.hp -= dmg;
+    this.emit({ t: 'hit', id: o.id });
     const kind = o.kind.startsWith('tree') || o.kind === 'saltbush' ? 'chip' : o.kind === 'weed' ? 'leaf' : o.kind === 'scrap_pile' || o.kind === 'wreck' ? 'spark' : 'stone';
     this.emit({ t: 'fx', kind, x: cx, y: cy, z: 8, n: 6 });
     this.sfx(kind === 'chip' ? 'chop' : kind === 'leaf' ? 'rustle' : kind === 'spark' ? 'clank' : 'rock', cx, cy);
@@ -863,7 +936,7 @@ export class Sim {
           this.toast('The barrel is dry. It fills when it rains.', 'info');
           break;
         }
-        ps.water = 20;
+        ps.water = this.canSize();
         this.sfx('refill', t.x, t.y);
         this.emit({ t: 'fx', kind: 'splash', x: t.x + 0.5, y: t.y + 0.5, n: 6 });
         this.toast('Can filled.', 'good');
@@ -1030,8 +1103,8 @@ export class Sim {
     }
     switch (def.kind) {
       case 'tool':
-        if (s.id === 'hoe') this.target = { ...tile, ok: this.tillable(tile.x, tile.y) && !this.world.tilled[k], kind: 'tool' };
-        else if (s.id === 'can') this.target = { ...tile, ok: this.canRefillAt(tile.x, tile.y) || (!!this.world.tilled[k] && !this.world.wet[k]), kind: 'tool' };
+        if (s.id === 'hoe' || s.id === 'hoe2') this.target = { ...tile, ok: this.tillable(tile.x, tile.y) && !this.world.tilled[k], kind: 'tool' };
+        else if (s.id === 'can' || s.id === 'can2') this.target = { ...tile, ok: this.canRefillAt(tile.x, tile.y) || (!!this.world.tilled[k] && !this.world.wet[k]), kind: 'tool' };
         else {
           const d = o ? OBJECTS[o.kind] : null;
           this.target = { ...tile, ok: !!d && (d.tool === s.id || d.tool === 'any'), kind: 'tool' };

@@ -4,7 +4,7 @@ import { dirFromScreen, tileToScreenVec } from '../core/iso';
 import { clamp } from '../core/rng';
 import { ENEMIES, OBJECTS } from '../data';
 import type { Anim } from '../art/rig';
-import { idx } from './world';
+import { WObject, idx } from './world';
 import { PLACES } from './worldgen';
 import type { Sim } from './sim';
 
@@ -28,6 +28,8 @@ export interface Husk {
   flash: number;
   stuck: number;
   side: number;
+  /** A hired hand on guard this Husk is going for, if any. */
+  prey: string | null;
 }
 
 const DEF = ENEMIES.husk;
@@ -60,7 +62,112 @@ export class NightSystem {
     const crops = w.crops.size;
     const lantern = s.state.player.lantern ? 0.6 : 0;
     const t = 0.8 + s.state.day * 0.28 + lamps * 0.35 + crops / 45 + lantern;
-    return t;
+    return t * (s.state.flags.difficulty === 'hard' ? 1.5 : 1);
+  }
+
+  /** True if Husks cannot walk from the edge of the map into the middle of the field without breaking something. */
+  fieldEnclosed(): boolean {
+    const w = this.sim.world;
+    const f = PLACES.field;
+    const sx = Math.floor((f.x0 + f.x1) / 2);
+    const sy = Math.floor((f.y0 + f.y1) / 2);
+    const seen = new Uint8Array(96 * 96);
+    const q: number[] = [sy * 96 + sx];
+    seen[q[0]] = 1;
+    while (q.length) {
+      const k = q.pop()!;
+      const x = k % 96;
+      const y = Math.floor(k / 96);
+      if (x <= 2 || y <= 2 || x >= 93 || y >= 93) return false;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx;
+        const ny = y + dy;
+        const nk = ny * 96 + nx;
+        if (seen[nk]) continue;
+        seen[nk] = 1;
+        if (w.walkable(nx, ny, false)) q.push(nk);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * When you sleep, the rest of the night still happens. Husks still due, and any still walking,
+   * are resolved here: traps and guards take some, fences hold some back, and the rest reach the crops.
+   */
+  resolveOffscreen(): string[] {
+    const s = this.sim;
+    const st = s.state;
+    const w = s.world;
+    const lines: string[] = [];
+    if (st.flags.difficulty === 'peaceful') {
+      this.husks = [];
+      return lines;
+    }
+    let pending = this.husks.filter(h => h.state !== 'dead' && h.state !== 'leave').length;
+    for (const at of this.waveTimes()) if (!this.wavesDone.has(at)) pending += clamp(Math.round(this.threat() * (0.7 + s.rng() * 0.4)), 1, 7);
+    this.wavesDone = new Set(this.waveTimes());
+    this.husks = [];
+    if (!pending) return lines;
+    let traps = 0;
+    let lampsOut = 0;
+    const fences: WObject[] = [];
+    const f = PLACES.field;
+    for (const o of w.objects.values()) {
+      if (o.kind === 'spike_trap') traps++;
+      if (o.kind === 'lamp' && (o.x < f.x0 - 1 || o.x > f.x1 + 1 || o.y < f.y0 - 1 || o.y > f.y1 + 1)) lampsOut++;
+      if (o.kind === 'fence' || o.kind === 'gate') fences.push(o);
+    }
+    const trapped = Math.min(pending, Math.round(traps * 0.45 * (0.6 + s.rng() * 0.8)));
+    pending -= trapped;
+    // Hands on guard
+    const guardLines = s.hands.resolveGuards(pending);
+    pending -= guardLines.kills;
+    // Fences
+    const enclosed = fences.length >= 8 && this.fieldEnclosed();
+    let reached = 0;
+    let broken = 0;
+    for (let i = 0; i < pending; i++) {
+      if (!enclosed) reached++;
+      else {
+        // They batter at the fence; some get through
+        const fc = fences[Math.floor(s.rng() * fences.length)];
+        if (fc && w.objects.has(fc.id)) {
+          fc.hp -= 8 + Math.floor(s.rng() * 10);
+          if (fc.hp <= 0) {
+            w.remove(fc);
+            broken++;
+            reached++;
+          }
+        }
+        if (s.rng() < 0.15) reached++;
+      }
+    }
+    // Lamps away from the field draw some of them off
+    reached = Math.round(reached * Math.max(0.35, 1 - lampsOut * 0.15));
+    const live = [...w.crops.entries()].filter(([, c]) => !c.dead).map(([k]) => k);
+    // A small patch is easy to miss in the dark; the first nights are kinder
+    const findChance = Math.min(1, 0.25 + live.length / 30) * (st.day <= 2 ? 0.5 : 1);
+    let trampled = 0;
+    for (let i = 0; i < reached && live.length; i++) {
+      if (s.rng() > findChance) continue;
+      const n = 1 + Math.floor(s.rng() * 2);
+      for (let j = 0; j < n && live.length; j++) {
+        const at = Math.floor(s.rng() * live.length);
+        const c = w.crops.get(live[at])!;
+        c.dead = true;
+        c.ripe = false;
+        live.splice(at, 1);
+        trampled++;
+      }
+    }
+    st.flags.trampled = Number(st.flags.trampled ?? 0) + trampled;
+    st.stats.husks += trapped + guardLines.kills;
+    if (trapped) lines.push(`Your spike traps caught ${trapped} ${trapped === 1 ? 'Husk' : 'Husks'} in the night.`);
+    lines.push(...guardLines.lines);
+    if (broken) lines.push(`${broken} ${broken === 1 ? 'fence section was' : 'fence sections were'} battered down.`);
+    if (enclosed && !broken && reached === 0 && pending > 0) lines.push('Husks came to the fence in the night. It held.');
+    return lines;
   }
 
   update(): void {
@@ -71,6 +178,7 @@ export class NightSystem {
       this.wavesDone.clear();
       this.husks = [];
     }
+    if (st.flags.difficulty === 'peaceful') return;
     // Waves
     for (const at of this.waveTimes()) {
       if (st.minute >= at && !this.wavesDone.has(at) && st.minute < at + 30) {
@@ -119,7 +227,8 @@ export class NightSystem {
       breakId: 0,
       flash: 0,
       stuck: 0,
-      side: s.rng() < 0.5 ? 1 : -1
+      side: s.rng() < 0.5 ? 1 : -1,
+      prey: null
     };
     this.husks.push(h);
     return h;
@@ -131,6 +240,23 @@ export class NightSystem {
     const p = s.player;
     const dP = Math.hypot(p.x - h.x, p.y - h.y);
     const sight = s.state.player.lantern ? DEF.lampSight : DEF.sight;
+    h.prey = null;
+    // A guard closer than the player draws it first
+    let gd = Infinity;
+    let guard: { id: string; x: number; y: number } | null = null;
+    for (const g of s.hands.activeGuards()) {
+      const d = Math.hypot(g.x - h.x, g.y - h.y);
+      if (d < DEF.sight && d < gd) {
+        gd = d;
+        guard = g;
+      }
+    }
+    if (guard && (s.dead || gd < dP)) {
+      h.goalX = guard.x;
+      h.goalY = guard.y;
+      h.prey = guard.id;
+      return true;
+    }
     if (!s.dead && dP < sight) {
       h.goalX = p.x;
       h.goalY = p.y;
@@ -240,7 +366,13 @@ export class NightSystem {
       case 'strike':
         h.anim = 'claw';
         h.animT = 0.25 + Math.min(h.t, 0.24);
-        if (h.t > 0.08 && h.t < 0.2 && dP < DEF.reach + 0.25) s.hurtPlayer(DEF.dmg, h.x, h.y);
+        if (h.t > 0.08 && h.t < 0.2) {
+          const prey = h.prey ? s.state.hands.find(x => x.id === h.prey) : null;
+          if (prey && Math.hypot(prey.x - h.x, prey.y - h.y) < DEF.reach + 0.25) {
+            s.hands.hurt(prey, DEF.dmg, h.x, h.y);
+            h.prey = null;
+          } else if (dP < DEF.reach + 0.25) s.hurtPlayer(DEF.dmg, h.x, h.y);
+        }
         if (h.t > DEF.cool * 0.6) {
           h.state = 'chase';
           h.t = 0;
@@ -279,11 +411,12 @@ export class NightSystem {
     const chasing = h.state !== 'leave' && this.chooseGoal(h);
     if (chasing) h.state = 'chase';
     else if (h.state === 'chase') h.state = 'walk';
-    if (h.state === 'chase' && dP < DEF.reach + 0.15 && !s.dead) {
+    const dT = h.prey ? Math.hypot(h.goalX - h.x, h.goalY - h.y) : dP;
+    if (h.state === 'chase' && dT < DEF.reach + 0.15 && (h.prey || !s.dead)) {
       h.state = 'windup';
       h.t = 0;
       h.animT = 0;
-      this.face(h, p.x, p.y);
+      this.face(h, h.goalX, h.goalY);
       s.sfx('husk_growl', h.x, h.y, 0.7);
       return;
     }
