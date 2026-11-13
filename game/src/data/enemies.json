@@ -1,0 +1,3 @@
+{
+  "husk": { "name": "Husk", "hp": 44, "speed": 1.25, "lunge": 2.6, "dmg": 10, "reach": 0.85, "windup": 0.55, "cool": 1.5, "sight": 6.5, "lampSight": 12, "breakDmg": 6 }
+}

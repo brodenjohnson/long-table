@@ -1,0 +1,10 @@
+{
+  "radish":    { "name": "Radish",        "days": 4,  "regrow": 0, "seasons": ["Wet", "Cold"],   "yield": [1, 1], "sell": 32,  "shape": "root",   "leaf": "#6f9a3c", "fruit": "#c8465a", "food": 12 },
+  "potato":    { "name": "Potato",        "days": 6,  "regrow": 0, "seasons": ["Wet", "Green"],  "yield": [2, 4], "sell": 24,  "shape": "bush",   "leaf": "#5d8a38", "fruit": "#b08850", "food": 14 },
+  "kale":      { "name": "Kale",          "days": 5,  "regrow": 0, "seasons": ["Cold", "Wet"],   "yield": [1, 1], "sell": 44,  "shape": "leafy",  "leaf": "#3f7a52", "fruit": "#3f7a52", "food": 10, "hardy": true },
+  "beans":     { "name": "Beans",         "days": 7,  "regrow": 3, "seasons": ["Green", "Dry"],  "yield": [2, 3], "sell": 18,  "shape": "vine",   "leaf": "#4f8a34", "fruit": "#7aa03c", "food": 8 },
+  "tomato":    { "name": "Tomato",        "days": 8,  "regrow": 3, "seasons": ["Green", "Dry"],  "yield": [1, 2], "sell": 38,  "shape": "vine",   "leaf": "#4a7d30", "fruit": "#d0442e", "food": 12 },
+  "corn":      { "name": "Corn",          "days": 10, "regrow": 4, "seasons": ["Green", "Dry"],  "yield": [1, 2], "sell": 46,  "shape": "stalk",  "leaf": "#7a9a3a", "fruit": "#e8c24a", "food": 16 },
+  "sunflower": { "name": "Sunflower",     "days": 7,  "regrow": 0, "seasons": ["Green", "Dry"],  "yield": [1, 1], "sell": 40,  "shape": "flower", "leaf": "#5a8a30", "fruit": "#f0b830", "food": 4, "cleans": 0.3, "hardy": true },
+  "pumpkin":   { "name": "Pumpkin",       "days": 12, "regrow": 0, "seasons": ["Dry", "Cold"],   "yield": [1, 1], "sell": 210, "shape": "gourd",  "leaf": "#4f7f2e", "fruit": "#e07a2a", "food": 30 }
+}

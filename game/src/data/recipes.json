@@ -1,0 +1,11 @@
+[
+  { "out": "fence",       "n": 2, "in": { "wood": 1 } },
+  { "out": "gate",        "n": 1, "in": { "wood": 4, "scrap": 1 } },
+  { "out": "lamp",        "n": 1, "in": { "scrap": 3, "wood": 1, "cloth": 1 } },
+  { "out": "compost_bin", "n": 1, "in": { "wood": 6 } },
+  { "out": "rain_barrel", "n": 1, "in": { "wood": 4, "scrap": 1 } },
+  { "out": "spike_trap",  "n": 2, "in": { "scrap": 3, "wood": 1 } },
+  { "out": "bunk",        "n": 1, "in": { "wood": 8, "cloth": 2 } },
+  { "out": "sprinkler",   "n": 1, "in": { "scrap": 6, "stone": 3 } },
+  { "out": "bandage",     "n": 1, "in": { "cloth": 1, "fibre": 2 } }
+]
