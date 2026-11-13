@@ -12,6 +12,10 @@ npm install
 npm run dev          # http://localhost:5173
 ```
 
+Or play the build on GitHub Pages, if it is turned on for the repo. `.github/workflows/playtest.yml` builds and publishes it, and explains the one-time setup.
+
+Saves live in the browser, so a save made on localhost will not show up on the Pages link, and the reverse.
+
 Controls: WASD to move, left mouse to use what is in your hand, right mouse or E to interact and harvest, 1 to 0 or the wheel to pick an item, Space to roll, F for the lantern, Tab for the bag, C to make things, M for the map, J for the journal, Esc for the menu. A controller works too (see Controls in the menu).
 
 ## Build and test
