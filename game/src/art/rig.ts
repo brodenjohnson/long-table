@@ -399,6 +399,14 @@ export const LOOKS: Record<string, Look> = {
     id: 'husk', skin: '#9aa58e', hair: '#4a4a40', hairStyle: 'shaggy', shirt: '#7f8f96', sleeve: '#7f8f96',
     pants: '#5f6a6e', boots: '#6f6a5a', hunch: 0.38, reach: 0.65, eyes: '#2a0f0c', gown: true
   },
+  raider: {
+    id: 'raider', skin: '#b8865e', hair: '#1e1612', hairStyle: 'bald', shirt: '#4a3a2e', coat: '#2e2620', sleeve: '#3a2e26',
+    pants: '#2f302c', boots: '#1e1a16', scarf: '#8a2a22', hat: 'beanie', hatColour: '#2a2420', build: 1.08
+  },
+  envoy: {
+    id: 'envoy', skin: '#c49a76', hair: '#5a4a3a', hairStyle: 'tied', shirt: '#6a5e4e', coat: '#2a2622',
+    pants: '#2f302c', boots: '#1e1a16', scarf: '#8a2a22', hat: 'brim', hatColour: '#1e1a16'
+  },
   trader: {
     id: 'trader', skin: '#a8724e', hair: '#1e1612', hairStyle: 'tied', shirt: '#c8b890', coat: '#2f5a5a',
     pants: '#3a3a36', boots: '#2a221c', armband: '#e0782a', hat: 'cap', hatColour: '#2a4444'

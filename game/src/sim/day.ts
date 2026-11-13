@@ -31,6 +31,7 @@ export function endDay(sim: Sim, passedOut: boolean): void {
   const report: string[] = [];
   sim.collectPickups();
   // The rest of the night happens while you sleep
+  report.push(...sim.raiders.resolveOffscreen());
   report.push(...sim.night.resolveOffscreen());
   sim.night.husks = [];
   sim.action = null;
@@ -176,6 +177,8 @@ export function endDay(sim: Sim, passedOut: boolean): void {
 
   sim.trader.newDay();
   sim.hands.maybeApplicant();
+  const envoy = sim.raiders.newDay();
+  if (envoy) report.push(envoy);
   if (sim.trader.visitToday()) report.push('The Hull truck comes today. It parks at the depot from eight until five.');
   if (dayOfSeason(st.day) === SEASON_DAYS - 2) report.push(`Two days left in the ${season} season.`);
 

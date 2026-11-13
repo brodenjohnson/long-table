@@ -107,6 +107,7 @@ export const RECIPES = recipesJson as unknown as Recipe[];
 export const ENEMIES = enemiesJson as unknown as Record<string, EnemyDef>;
 export const HANDS = (peopleJson as unknown as { hands: HandDef[] }).hands;
 export const TRADER = (peopleJson as unknown as { trader: { name: string; outfit: string } }).trader;
+export const CREW = (peopleJson as unknown as { crew: { name: string; envoy: string } }).crew;
 
 /** Sell price of produce, before quality, contamination and demand. */
 export function baseSell(itemId: string): number {

@@ -1,10 +1,62 @@
 {
   "hands": [
-    { "id": "ada",   "name": "Ada Mercer",     "pitch": "I don't need much. I need to not be on the road after dark.", "wage": 14, "water": 3, "harvest": 2, "nerve": 2, "secret": "Walked out of a Hull work gang owing money." },
-    { "id": "tomas", "name": "Tomas Reyes",    "pitch": "I've buried two farms. I'd like to see one live.", "wage": 18, "water": 2, "harvest": 3, "nerve": 3, "secret": "His last farm went to raiders because he opened the gate." },
-    { "id": "june",  "name": "June Oyelaran",  "pitch": "Feed me and I'll work. Don't feed me and I'll still work, but slower.", "wage": 12, "water": 2, "harvest": 2, "nerve": 1, "secret": "Has a brother in a Listener camp." },
-    { "id": "wes",   "name": "Wes Harlan",     "pitch": "Used to drive for the Hull. Can't stomach the road any more.", "wage": 16, "water": 2, "harvest": 2, "nerve": 3, "secret": "Lost a convoy, and the people on it." },
-    { "id": "priya", "name": "Priya Lakhani",  "pitch": "I know soil. Whatever's wrong with yours, I've seen worse.", "wage": 22, "water": 3, "harvest": 3, "nerve": 1, "secret": "Trained at a Meridian site before the war." }
+    {
+      "id": "ada",
+      "name": "Ada Mercer",
+      "pitch": "I don't need much. I need to not be on the road after dark.",
+      "wage": 14,
+      "water": 3,
+      "harvest": 2,
+      "nerve": 2,
+      "secret": "Walked out of a Hull work gang owing money."
+    },
+    {
+      "id": "tomas",
+      "name": "Tomas Reyes",
+      "pitch": "I've buried two farms. I'd like to see one live.",
+      "wage": 18,
+      "water": 2,
+      "harvest": 3,
+      "nerve": 3,
+      "secret": "His last farm went to raiders because he opened the gate."
+    },
+    {
+      "id": "june",
+      "name": "June Oyelaran",
+      "pitch": "Feed me and I'll work. Don't feed me and I'll still work, but slower.",
+      "wage": 12,
+      "water": 2,
+      "harvest": 2,
+      "nerve": 1,
+      "secret": "Has a brother in a Listener camp."
+    },
+    {
+      "id": "wes",
+      "name": "Wes Harlan",
+      "pitch": "Used to drive for the Hull. Can't stomach the road any more.",
+      "wage": 16,
+      "water": 2,
+      "harvest": 2,
+      "nerve": 3,
+      "secret": "Lost a convoy, and the people on it."
+    },
+    {
+      "id": "priya",
+      "name": "Priya Lakhani",
+      "pitch": "I know soil. Whatever's wrong with yours, I've seen worse.",
+      "wage": 22,
+      "water": 3,
+      "harvest": 3,
+      "nerve": 1,
+      "secret": "Trained at a Meridian site before the war."
+    }
   ],
-  "trader": { "name": "Ines Varga", "outfit": "Hull Provisioning" }
+  "trader": {
+    "name": "Ines Varga",
+    "outfit": "Hull Provisioning"
+  },
+  "crew": {
+    "name": "Sallow Crew",
+    "envoy": "Corso Vane"
+  }
 }

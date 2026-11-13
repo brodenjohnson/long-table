@@ -310,3 +310,69 @@ test('the steel hoe turns three tiles at once', async ({ page }) => {
   });
   expect(r).toBe(3);
 });
+
+test('refusing the Crew brings a raid on the crate that night', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    s.state.day = 6;
+    s.state.crew.envoyDay = 6;
+    s.state.crew.demand = 100;
+    s.raiders.refuse();
+    s.state.depot.push({ id: 'corn', n: 20 });
+    s.player.x = 20; s.player.y = 80; // well away
+    s.state.minute = 22 * 60 - 1;
+    g.advance(2);
+    const came = s.raiders.list.length;
+    g.advance(40);
+    const left = s.state.depot.reduce((a: number, x: any) => a + x.n, 0);
+    return { came, left };
+  });
+  expect(r.came).toBeGreaterThanOrEqual(3);
+  expect(r.left).toBeLessThan(20);
+});
+
+test('raiders can be fought off', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    const s = g.sim;
+    s.state.day = 6;
+    s.raiders.refuse();
+    s.state.minute = 22 * 60 + 1;
+    g.advance(0.1);
+    s.state.sel = 4;
+    // Fight each one in turn, standing next to it
+    for (let guard = 0; guard < 300; guard++) {
+      const live = s.raiders.list.filter((x: any) => x.state !== 'dead' && x.state !== 'flee');
+      if (!live.length) break;
+      const t = live[0];
+      s.player.x = t.x - 0.7; s.player.y = t.y;
+      s.state.player.hp = 100;
+      g.stepWith({ usePressed: true, use: true, aim: { x: t.x, y: t.y } });
+      g.advance(0.45);
+    }
+    g.advance(1);
+    const hurt = s.raiders.list.filter((x: any) => x.hp < 70).length;
+    return { won: s.state.crew.won, lost: s.state.crew.lost, hurt };
+  });
+  // Badly hurt raiders run for the road rather than die; the raid counts as won if they leave empty-handed
+  expect(r.won).toBe(1);
+  expect(r.lost).toBe(0);
+});
+
+test('an old version 1 save still loads', async ({ page }) => {
+  await boot(page);
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    g.game.save();
+    const raw = JSON.parse(localStorage.getItem('longtable.save.' + g.game.slot)!);
+    raw.version = 1;
+    delete raw.state.crew;
+    localStorage.setItem('longtable.save.' + g.game.slot, JSON.stringify(raw));
+    g.game.load(g.game.slot);
+    return { crew: !!g.sim.state.crew, version: g.sim.state.version };
+  });
+  expect(r.crew).toBe(true);
+});

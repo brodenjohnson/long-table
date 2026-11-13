@@ -1,3 +1,4 @@
 {
-  "husk": { "name": "Husk", "hp": 44, "speed": 1.25, "lunge": 2.6, "dmg": 10, "reach": 0.85, "windup": 0.55, "cool": 1.5, "sight": 6.5, "lampSight": 12, "breakDmg": 6 }
+  "husk": {"name": "Husk", "hp": 44, "speed": 1.25, "lunge": 2.6, "dmg": 10, "reach": 0.85, "windup": 0.55, "cool": 1.5, "sight": 6.5, "lampSight": 12, "breakDmg": 6},
+  "raider": {"name": "Sallow Crew", "hp": 70, "speed": 2.0, "lunge": 2.2, "dmg": 13, "reach": 0.95, "windup": 0.42, "cool": 1.15, "sight": 7, "lampSight": 12, "breakDmg": 10}
 }

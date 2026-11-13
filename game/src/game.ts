@@ -15,7 +15,7 @@ import { Sim, InputFrame, SimEvent } from './sim/sim';
 import { World } from './sim/world';
 import { generate, PLACES } from './sim/worldgen';
 import { HOTBAR, newGameState } from './sim/state';
-import { LocalStore, SLOTS, SaveFile, deserialize, serialize } from './sim/save';
+import { SLOTS, SaveFile, SaveStore, deserialize, makeStore, serialize } from './sim/save';
 import { Input } from './input/input';
 import { Audio } from './audio/audio';
 import { DEFAULT_SETTINGS, GameApi, Settings, UI } from './ui/ui';
@@ -32,7 +32,7 @@ export class Game implements GameApi {
   input!: Input;
   audio = new Audio();
   ui!: UI;
-  store = new LocalStore();
+  store: SaveStore = makeStore();
   settings: Settings = { ...DEFAULT_SETTINGS };
   slot = 0;
   private acc = 0;
@@ -67,6 +67,8 @@ export class Game implements GameApi {
     paintCharacterSet(this.atlas, LOOKS.player, ['idle', 'walk', 'swing', 'pour', 'shoot', 'roll', 'hurt', 'dead']);
     paintCharacterSet(this.atlas, LOOKS.husk, ['idle', 'walk', 'claw', 'hurt', 'dead']);
     paintCharacterSet(this.atlas, LOOKS.trader, ['idle', 'walk']);
+    paintCharacterSet(this.atlas, LOOKS.raider, ['idle', 'walk', 'swing', 'hurt', 'dead']);
+    paintCharacterSet(this.atlas, LOOKS.envoy, ['idle']);
     this.atlas.build();
     // A world behind the title screen
     const world = new World();
@@ -284,7 +286,16 @@ export class Game implements GameApi {
     const sim = this.simRef;
     if (!sim || !this.renderer) return;
     inp.blockWorld = this.ui.open;
-    if (this.ui.open) this.ui.navigate();
+    if (this.ui.open) {
+      this.ui.navigate();
+      // Escape, or the key that opened it, closes a menu
+      const name = this.ui.screenName;
+      const locked = ['title', 'notice', 'intro', 'report', 'newgame', 'load', 'credits'].includes(name);
+      if (!locked && (inp.pressed('pause') || (name === 'bag' && (inp.pressed('inventory') || inp.pressed('craft'))) || (name === 'journal' && inp.pressed('journal')))) {
+        inp.endFrame();
+        this.ui.close();
+      } else if (['load', 'credits', 'newgame'].includes(name) && inp.pressed('pause')) this.ui.showTitle();
+    }
 
     if (this.running && !this.ui.open) {
       // Menu keys
@@ -411,6 +422,9 @@ export class Game implements GameApi {
         break;
       case 'radio':
         this.ui.showRadio(sim);
+        break;
+      case 'envoy':
+        this.ui.showEnvoy();
         break;
     }
   }

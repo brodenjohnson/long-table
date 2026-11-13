@@ -2,7 +2,7 @@
 import './ui.css';
 import { h, clear } from './dom';
 import { iconURL } from '../art/icons';
-import { CROPS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
+import { CREW, CROPS, HANDS, ITEMS, QUALITY_NAMES, RECIPES, TRADER } from '../data';
 import { addItem, countItem, removeItem } from '../sim/inventory';
 import { HOTBAR, dayOfSeason, seasonOf, timeString, weekday, Stack } from '../sim/state';
 import type { Sim } from '../sim/sim';
@@ -848,6 +848,31 @@ export class UI {
         h('button', { onclick: () => this.close() }, 'Done'))
     );
     this.show('hand', panel);
+  }
+
+  showEnvoy(): void {
+    const sim = this.game.sim()!;
+    const c = sim.state.crew;
+    const canPay = sim.state.player.scrip >= c.demand;
+    const kind = Math.round(c.demand * 1.25);
+    let produce = 0;
+    for (const st of [...sim.state.inv, ...sim.state.depot]) if (st && ITEMS[st.id].kind === 'produce') produce += sim.sellPrice(st) * st.n;
+    const first = sim.state.crew.won + sim.state.crew.lost === 0 && !sim.state.flags.metEnvoy;
+    sim.state.flags.metEnvoy = 1;
+    const speech = first
+      ? `"Name's ${CREW.envoy}. I speak for the ${CREW.name}. We keep this road. The trucks get through because we let them. A farm on our road pays its share. ${c.demand} scrip, and nobody bothers you for a week."`
+      : `"You know how this goes. ${c.demand} scrip. Or we come and help ourselves."`;
+    const panel = h('div', { class: 'panel modal', style: { width: 'calc(var(--u) * 32)' } },
+      h('h2', null, CREW.envoy),
+      h('p', { class: 'quote' }, speech),
+      h('p', { class: 'faint' }, 'Paying buys six quiet days. Refusing means they come for the depot crate tonight at ten, with torches. You can fight them. Your guards and a fence will help.'),
+      h('div', { class: 'col' },
+        h('button', { class: 'primary', disabled: !canPay, onclick: () => { if (sim.raiders.pay()) { this.toast(`${CREW.envoy} counts it twice and tips his hat.`, 'info'); this.close(); } } }, `Pay ${c.demand} scrip${canPay ? '' : ' (you do not have it)'}`),
+        h('button', { disabled: produce < kind, onclick: () => { if (sim.raiders.payInKind()) { this.toast('His men load the produce onto a cart.', 'info'); this.close(); } } }, `Pay in produce, about ${kind} worth${produce < kind ? ' (not enough)' : ''}`),
+        h('button', { onclick: () => { sim.raiders.refuse(); this.close(); } }, 'Tell him no'),
+        h('button', { onclick: () => this.close() }, 'Say nothing yet'))
+    );
+    this.show('envoy', panel);
   }
 
   showJournal(): void {

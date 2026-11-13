@@ -1,0 +1,25 @@
+{
+  "name": "long-table-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Desktop (Steam) build of Long Table",
+  "main": "main.cjs",
+  "scripts": {
+    "prepare-web": "cd ../game && npm run build && cd ../desktop && node copy-web.cjs",
+    "start": "npm run prepare-web && electron .",
+    "dist": "npm run prepare-web && electron-builder --win --mac --linux"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.longtable.game",
+    "productName": "Long Table",
+    "directories": { "output": "release" },
+    "files": ["main.cjs", "preload.cjs", "web/**/*"],
+    "win": { "target": "dir" },
+    "mac": { "target": "dir", "category": "public.app-category.games" },
+    "linux": { "target": "dir" }
+  }
+}

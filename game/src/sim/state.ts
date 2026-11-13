@@ -69,13 +69,15 @@ export interface GameState {
   /** Hands who have left or been let go do not come back. */
   goneHands: string[];
   flags: Record<string, boolean | number | string>;
+  /** The Sallow Crew: when they ask, what they asked, and what you did. */
+  crew: { envoyDay: number; demand: number; paidUntil: number; raidDay: number; angry: number; won: number; lost: number };
   stats: { earned: number; harvested: number; husks: number; shipped: number };
   /** The morning report, shown once after waking. */
   report: string[];
   journal: { day: number; text: string }[];
 }
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const INV_SIZE = 30;
 export const HOTBAR = 10;
 
@@ -133,6 +135,7 @@ export function newGameState(seed: number, name: string, startX: number, startY:
     applicant: null,
     goneHands: [],
     flags: {},
+    crew: { envoyDay: 0, demand: 0, paidUntil: 0, raidDay: 0, angry: 0, won: 0, lost: 0 },
     stats: { earned: 0, harvested: 0, husks: 0, shipped: 0 },
     report: [],
     journal: []

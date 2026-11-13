@@ -475,6 +475,22 @@ export class Renderer {
       this.placeChar(id, 'husk', h.x, h.y, h.dir, a, t, 'none', { flash: h.flash > 0, alpha });
     }
 
+    for (const rd of sim.raiders.list) {
+      const id = 'raider' + rd.id;
+      seen.add(id);
+      const alpha = rd.state === 'dead' ? Math.max(0, 1 - Math.max(0, rd.t - 14) / 6) : 1;
+      let t = rd.animT;
+      if (rd.anim === 'swing') t = rd.state === 'windup' ? Math.min(0.22, rd.t * 0.5) : 0.24 + Math.min(0.2, rd.t);
+      this.placeChar(id, 'raider', rd.x, rd.y, rd.dir, rd.anim, t, rd.tool, { flash: rd.flash > 0, alpha });
+    }
+    const ev = sim.raiders.envoyPos();
+    if (ev) {
+      seen.add('envoy');
+      const v = toScreen(sim.player.x - ev.x, sim.player.y - ev.y);
+      const dir = Math.hypot(sim.player.x - ev.x, sim.player.y - ev.y) < 6 ? (Math.round(Math.atan2(v.y, v.x) / (Math.PI / 4)) + 8) % 8 : 3;
+      this.placeChar('envoy', 'envoy', ev.x, ev.y, dir, 'idle', this.time, 'none');
+    }
+
     for (const h of sim.state.hands) {
       const id = 'hand' + h.id;
       seen.add(id);
@@ -682,6 +698,8 @@ export class Renderer {
       light(sim.player.x, sim.player.y, 10, 6.5 * flick, 0xffe0a0, 1);
       light(sim.player.x, sim.player.y, 10, 2.5, 0xfff0d0, 0.6);
     }
+    // The Crew carry torches
+    for (const rd of sim.raiders.list) if (rd.state !== 'dead') light(rd.x, rd.y, 22, 3.8 * flick, 0xff8a40, 0.95);
     // Husks catch a little light: pale skin and eyes in the dark
     for (const hk of sim.night.husks) if (hk.state !== 'dead') light(hk.x, hk.y, 18, 1.1, 0x9ab0c0, 0.55);
     // A dim circle around the player so the night is never pitch black where you stand

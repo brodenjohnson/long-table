@@ -540,6 +540,27 @@ export class NightSystem {
       this.damage(h, dmg * (0.9 + s.rng() * 0.2), px, py, false);
       any = true;
     }
+    for (const r of s.raiders.list) {
+      if (r.state === 'dead') continue;
+      const d = Math.hypot(r.x - px, r.y - py);
+      if (d > reach + R) continue;
+      const a = Math.atan2(r.y - py, r.x - px);
+      let diff = Math.abs(a - aimA);
+      if (diff > Math.PI) diff = Math.PI * 2 - diff;
+      if (diff > arc / 2 && d > 0.5) continue;
+      s.raiders.damage(r, dmg * (0.9 + s.rng() * 0.2), px, py, false);
+      any = true;
+    }
+    // Striking the Crew's man at the gate starts a fight
+    const ev = s.raiders.envoyPos();
+    if (ev && Math.hypot(ev.x - px, ev.y - py) < reach + R) {
+      s.raiders.provoke();
+      const r = s.raiders.spawn(ev.x, ev.y);
+      r.state = 'chase';
+      s.raiders.damage(r, dmg, px, py, false);
+      s.toast('He was not expecting that. Neither will the rest of them, tonight.', 'bad');
+      any = true;
+    }
     if (any) {
       s.emit({ t: 'hitstop', ms: 55 });
       s.emit({ t: 'shake', amt: 1.4 });
@@ -577,6 +598,19 @@ export class NightSystem {
         target = h;
       }
     }
+    let raider: (typeof s.raiders.list)[number] | null = null;
+    for (const r of s.raiders.list) {
+      if (r.state === 'dead') continue;
+      const rx = r.x - px;
+      const ry = r.y - py;
+      const t = rx * dx + ry * dy;
+      if (t < 0 || t > hitT) continue;
+      if (Math.abs(rx * dy - ry * dx) < 0.42) {
+        hitT = t;
+        raider = r;
+        target = null;
+      }
+    }
     // Walls and trees stop the shot
     for (let t = 0.4; t < hitT; t += 0.2) {
       const x = Math.floor(px + dx * t);
@@ -585,6 +619,7 @@ export class NightSystem {
       if (o && OBJECTS[o.kind].solid && OBJECTS[o.kind].w === 1 && !['fence', 'spike_trap'].includes(o.kind)) {
         hitT = t;
         target = null;
+        raider = null;
         s.emit({ t: 'fx', kind: 'spark', x: px + dx * t, y: py + dy * t, z: 10, n: 4 });
         break;
       }
@@ -596,6 +631,10 @@ export class NightSystem {
     this.noise = { x: px, y: py, t: 12 };
     if (target) {
       this.damage(target, dmg, px, py, true);
+      s.emit({ t: 'hitstop', ms: 60 });
+    }
+    if (raider) {
+      s.raiders.damage(raider, dmg, px, py, true);
       s.emit({ t: 'hitstop', ms: 60 });
     }
     void MINUTE_SEC;

@@ -11,6 +11,7 @@ import { PLACES } from './worldgen';
 import { NightSystem } from './night';
 import { HandSystem } from './hands';
 import { TraderSystem } from './trader';
+import { RaiderSystem } from './raiders';
 import { endDay } from './day';
 
 export interface InputFrame {
@@ -35,7 +36,7 @@ export type SimEvent =
   | { t: 'decal'; kind: string; x: number; y: number }
   | { t: 'shake'; amt: number }
   | { t: 'hitstop'; ms: number }
-  | { t: 'open'; what: 'depot' | 'shop' | 'hire' | 'hand' | 'sleep' | 'compost' | 'radio'; id?: string }
+  | { t: 'open'; what: 'depot' | 'shop' | 'hire' | 'hand' | 'sleep' | 'compost' | 'radio' | 'envoy'; id?: string }
   | { t: 'dayEnded'; passedOut: boolean }
   | { t: 'tracer'; x0: number; y0: number; x1: number; y1: number }
   | { t: 'ground'; x: number; y: number }
@@ -103,6 +104,7 @@ export class Sim {
   readonly night: NightSystem;
   readonly hands: HandSystem;
   readonly trader: TraderSystem;
+  readonly raiders: RaiderSystem;
   /** Simulation time, seconds. */
   time = 0;
   /** Set when the day should end at the next step. */
@@ -124,6 +126,7 @@ export class Sim {
     this.night = new NightSystem(this);
     this.hands = new HandSystem(this);
     this.trader = new TraderSystem(this);
+    this.raiders = new RaiderSystem(this);
   }
 
   emit(e: SimEvent): void {
@@ -177,6 +180,7 @@ export class Sim {
     this.night.update();
     this.hands.update();
     this.trader.update();
+    this.raiders.update();
     this.updateTarget(input);
     // Write back to the saved player state
     const ps = this.state.player;
@@ -909,6 +913,8 @@ export class Sim {
     };
     const tr = this.trader.npcPos();
     if (tr && near(tr.x, tr.y)) return { kind: 'shop', x: tr.x, y: tr.y };
+    const ev = this.raiders.envoyPos();
+    if (ev && near(ev.x, ev.y)) return { kind: 'envoy', x: ev.x, y: ev.y };
     const ap = this.hands.applicantPos();
     if (ap && near(ap.x, ap.y)) return { kind: 'hire', x: ap.x, y: ap.y, id: this.state.applicant!.id };
     for (const h of this.state.hands) if (near(h.x, h.y) && !this.hands.asleep(h)) return { kind: 'hand', x: h.x, y: h.y, id: h.id };
@@ -959,6 +965,9 @@ export class Sim {
         break;
       case 'hand':
         this.emit({ t: 'open', what: 'hand', id: t.id });
+        break;
+      case 'envoy':
+        this.emit({ t: 'open', what: 'envoy' });
         break;
     }
   }

@@ -22,7 +22,12 @@ export interface SaveFile {
 }
 
 /** Each entry upgrades a save from version i+1 to i+2. Never remove entries. */
-const MIGRATIONS: ((s: SaveFile) => void)[] = [];
+const MIGRATIONS: ((s: SaveFile) => void)[] = [
+  // 1 -> 2: the Sallow Crew
+  s => {
+    (s.state as GameState).crew = { envoyDay: 0, demand: 0, paidUntil: 0, raidDay: 0, angry: 0, won: 0, lost: 0 };
+  }
+];
 
 function b64(bytes: Uint8Array): string {
   let s = '';
@@ -157,4 +162,46 @@ export class LocalStore implements SaveStore {
   remove(slot: number): void {
     localStorage.removeItem(KEY(slot));
   }
+}
+
+interface DesktopBridge {
+  saves: { write(slot: number, json: string): boolean; read(slot: number): string | null; remove(slot: number): boolean };
+}
+
+/** Saves as files on disk, through the Electron preload bridge. Used by the Steam build. */
+export class DesktopStore implements SaveStore {
+  constructor(private bridge: DesktopBridge) {}
+
+  write(slot: number, data: SaveFile): void {
+    this.bridge.saves.write(slot, JSON.stringify(data));
+  }
+
+  read(slot: number): SaveFile | null {
+    const raw = this.bridge.saves.read(slot);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as SaveFile;
+    } catch {
+      return null;
+    }
+  }
+
+  list(): SlotInfo[] {
+    const out: SlotInfo[] = [];
+    for (let s = 0; s < SLOTS; s++) {
+      const f = this.read(s);
+      if (f) out.push({ slot: s, name: f.state.name, day: f.state.day, savedAt: f.savedAt, scrip: f.state.player.scrip });
+    }
+    return out;
+  }
+
+  remove(slot: number): void {
+    this.bridge.saves.remove(slot);
+  }
+}
+
+/** The right store for where the game is running. */
+export function makeStore(): SaveStore {
+  const d = (globalThis as unknown as { desktop?: DesktopBridge }).desktop;
+  return d ? new DesktopStore(d) : new LocalStore();
 }
