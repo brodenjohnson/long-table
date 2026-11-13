@@ -1,10 +1,45 @@
 # Long Table (codename)
 
-A dark, adult farming and settlement game with combat, for the browser and later Steam. It continues the world of Wasteland Settlement with a new engine.
+A dark, adult farming and settlement game with combat, set in the world of Wasteland Settlement. Browser first, Steam later.
 
-- The plan: `docs/PLAN.md`
-- The project guide for people and for Claude: `CLAUDE.md`
-- Story and earlier design: `docs/lore/`
-- Where the two earlier projects stand visually: `docs/baseline/`
+You wake in a hardened valley farm with no memory and a note in your own handwriting. Grow food in bad ground, sell it to the Hull truck, take on hired hands, and keep the farm standing against the Husks that walk at night and the Crew that work the road.
 
-No code yet. Phase 0 starts once the questions at the end of the plan are answered.
+## Play it
+
+```
+cd game
+npm install
+npm run dev          # http://localhost:5173
+```
+
+Controls: WASD to move, left mouse to use what is in your hand, right mouse or E to interact and harvest, 1 to 0 or the wheel to pick an item, Space to roll, F for the lantern, Tab for the bag, C to make things, M for the map, J for the journal, Esc for the menu. A controller works too (see Controls in the menu).
+
+## Build and test
+
+```
+cd game
+npm run build        # typecheck and build to game/dist
+npm test             # Playwright regression tests (uses your installed Chrome)
+npm run ipcheck      # fails if a name from another game appears anywhere
+```
+
+## Desktop (Steam) build
+
+```
+cd desktop
+npm install          # downloads Electron, about 100 MB
+npm start            # builds the web game and opens it in a desktop window
+npm run dist         # Windows, Mac and Linux builds into desktop/release
+```
+
+Saves in the desktop build are JSON files in the app data folder (`saves/slot0.json` and so on), ready for Steam Cloud. Steamworks itself waits for an app id.
+
+## Where things are
+
+- `docs/PLAN.md`: the plan, the decisions log, the names and trademarks rules
+- `CLAUDE.md`: the project guide for people and for Claude
+- `docs/lore/`: the story and earlier design from Wasteland Settlement
+- `game/src/`: the game (TypeScript, PixiJS 8). `sim/` is the simulation, `render/` draws it, `art/` paints every sprite in code, `ui/` is the DOM layer, `audio/` synthesises all sound, `data/` holds the content as JSON
+- `game/artview.html`: a page that shows the generated art at 3x (`?show=chars` or `?show=props`)
+- `desktop/`: the Electron wrapper
+- `tools/ip-check.mjs`: the banned-names check
